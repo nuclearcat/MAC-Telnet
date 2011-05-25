@@ -2,7 +2,8 @@ MAC-Telnet / MAC SSH for Linux
 ==============================
 
 Based on the original work of haakonnessjoen (Håkon Nessjøen) that implements
-the following: 
+the following:
+
 * A linux console tool for connecting to MikroTik RouterOS devices via their
 ethernet address.
 * Linux daemon that implements the MAC Telnet Daemon to permit connecting
@@ -30,8 +31,8 @@ Then:
 Now you're ready.
 
 
-Usage
------
+Usage: mactelnet
+----------------
 
     # mactelnet -h
     Usage: mactelnet <MAC|identity> [-h] [-n] [-t <timeout>] [-u <username>] [-p <password>]
@@ -51,9 +52,9 @@ Example:
     $ mactelnet 0:c:42:43:58:a5 -u admin
     Password: 
     Connecting to 0:c:42:43:58:a5...done
-    
 
-MAC-Ping usage
+
+Usage: macping
 --------------
 
     # macping -h
@@ -80,3 +81,16 @@ Example:
 Or for use in bash-scripting:
 
     # macping 0:c:42:43:58:a5 -c 2 >/dev/null 2>&1 || ( echo "No answer for 2 pings" | mail -s "router down" my.email@address.com )
+
+
+Usage: mactelnetd
+-----------------
+
+    # mactelnetd -h
+    Usage: ./mactelnetd [-f|-n|-h]
+    
+    Parameters:
+      -f        Run process in foreground.
+      -n        Do not use broadcast packets. Just a tad less insecure.
+      -h        This help.
+
