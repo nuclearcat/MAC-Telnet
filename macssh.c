@@ -333,7 +333,7 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, "Usage: %s <MAC|identity> [-h] [-n] [-t <timeout>]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <MAC|identity> [-h] [-n] [-u] [-t <timeout>]\n", argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, "\nParameters:\n");
