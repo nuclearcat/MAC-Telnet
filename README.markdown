@@ -1,22 +1,33 @@
-MAC-Telnet for Linux
-====================
+MAC-Telnet / MAC SSH for Linux
+==============================
 
-A linux console tool for connecting to MikroTik RouterOS devices via their
+Based on the original work of haakonnessjoen (Håkon Nessjøen) that implements
+the following: 
+* A linux console tool for connecting to MikroTik RouterOS devices via their
 ethernet address.
+* Linux daemon that implements the MAC Telnet Daemon to permit connecting
+to Linux machines via their ethernet address.
+
+Forked to implement additional client and daemon that tunnels ssh connection
+through the MAC Telnet protocol to permit connecting to Linux machines via
+their ethernet address using SSH protocol.
+
+Using the SSH protocol no mactelnet.users file is requiered. Public key
+authentication works seamlessly permiting logins without password.
+
+The SSH versions of the client and daemon are not compatible with the Telnet
+versions.
 
 Installation
 ------------
 
-Then download source tarball, extract, compile and install:
+Clone repository.
 
-    wget http://github.com/haakonnessjoen/MAC-Telnet/tarball/master
-    tar zxvf haakonness*.tar.gz
-    cd haakonness*/
+Then:
     make all install
 
 Now you're ready.
 
-TIP: You can use the well known "expect" tool to automate/script dialogues via mactelnet!
 
 Usage
 -----
