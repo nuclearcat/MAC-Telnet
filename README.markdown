@@ -94,6 +94,8 @@ Usage: mactelnetd
       -n        Do not use broadcast packets. Just a tad less insecure.
       -h        This help.
 
+Only existing system users listed in /etc/mactelnetd.users can be used for login using mactelnet. The password in /etc/mactelnetd.users is used instead of system passwords.
+
 
 Usage: macssh
 -------------
@@ -121,4 +123,6 @@ Usage: macsshd
       -n        Do not use broadcast packets. Just a tad less insecure.
       -p        Destination port.
       -h        This help.
+
+The server forwards connections to SSH server on a local port. Port 22 is used by default, but the port can be changed using the -p option.
 
