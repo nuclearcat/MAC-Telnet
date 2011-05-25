@@ -57,7 +57,7 @@ static unsigned char dstmac[ETH_ALEN];
 static struct in_addr sourceip; 
 static struct in_addr destip;
 static int sourceport;
-static int fwdport;
+static int fwdport = 2222;
 
 static int connect_timeout = CONNECT_TIMEOUT;
 
@@ -315,6 +315,10 @@ int main (int argc, char **argv) {
 				have_username = 1;
 				break;
 
+			case 'p':
+				fwdport = atoi(optarg);
+				break;
+
 			case 't':
 				connect_timeout = atoi(optarg);
 				break;
@@ -333,7 +337,7 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, "Usage: %s <MAC|identity> [-h] [-n] [-u] [-t <timeout>]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <MAC|identity> [-h] [-n] [-u] [-p PORT] [-t <timeout>]\n", argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, "\nParameters:\n");
@@ -342,6 +346,7 @@ int main (int argc, char **argv) {
 			fprintf(stderr, "  -n        Do not use broadcast packets. Less insecure but requires root privileges.\n");
 			fprintf(stderr, "  -t        Amount of seconds to wait for a response on each interface.\n");
 			fprintf(stderr, "  -u        Specify username on command line.\n");
+			fprintf(stderr, "  -p        Specify terminal proxy port on command line.\n");
 			fprintf(stderr, "  -h        This help.\n");
 			fprintf(stderr, "\n");
 		}
@@ -389,9 +394,6 @@ int main (int argc, char **argv) {
 		/* No valid mac address found, abort */
 		return 1;
 	}
-
-	/* Set random source port */
-	fwdport = 1024 + (rand() % 1024);
 	
 	/* Server socket for receiving terminal client connection. */
 	int fwdsrvfd;
@@ -433,6 +435,10 @@ int main (int argc, char **argv) {
 		}
 		if(setsockopt(fwdfd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) < 0) {
 			perror("SO_KEEPALIVE");
+			return 1;
+		}
+		if(setsockopt(fwdfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval)) < 0) {
+			perror("SO_REUSEADDR");
 			return 1;
 		}
 		fprintf(stderr, "Client connected from port: %d\n", ntohs(cli_socket.sin_port));
