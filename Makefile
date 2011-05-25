@@ -2,19 +2,21 @@
 CC=gcc
 CCFLAGS= 
 
-all: macping mndp mactelnet mactelnetd
+all: macping mndp mactelnet mactelnetd macssh macsshd
 
 clean: dist-clean
 
 dist-clean:
-	rm -f mactelnet macping mactelnetd mndp
+	rm -f mactelnet macping mactelnetd macssh macsshd mndp
 	rm -f *.o
 
-strip-all: mndp macping mactelnet mactelnetd
+strip-all: mndp macping mactelnet mactelnetd macssh macsshd
 	strip -s mndp
 	strip -s macping
 	strip -s mactelnet
 	strip -s mactelnetd
+	strip -s macssh
+	strip -s macsshd
 
 install: all strip-all install-docs
 	mkdir -p $(DESTDIR)/usr/bin
@@ -23,6 +25,8 @@ install: all strip-all install-docs
 	cp mactelnet $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/usr/sbin
 	cp mactelnetd $(DESTDIR)/usr/sbin/
+	cp macssh $(DESTDIR)/usr/bin/
+	cp macsshd $(DESTDIR)/usr/sbin/
 	mkdir -p $(DESTDIR)/etc
 	cp config/mactelnetd.users $(DESTDIR)/etc/
 # Ubuntu upstart script
@@ -55,8 +59,15 @@ mactelnet: config.h udp.o mactelnet.c mactelnet.h protocol.o console.c console.h
 mactelnetd: config.h mactelnetd.c udp.o protocol.o devices.o console.c console.h users.o users.h md5.o
 	${CC} -Wall ${CCFLAGS} -o mactelnetd mactelnetd.c udp.o protocol.o console.c devices.o users.o md5.o
 
+macssh: config.h udp.o macssh.c mactelnet.h protocol.o devices.o
+	${CC} -Wall ${CCFLAGS} -o macssh macssh.c udp.o protocol.o devices.o
+
+macsshd: config.h macsshd.c udp.o protocol.o devices.o
+	${CC} -Wall ${CCFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o
+
 mndp: config.h mndp.c protocol.o
 	${CC} -Wall ${CCFLAGS} -o mndp mndp.c protocol.o
 
 macping: config.h macping.c udp.o devices.o protocol.o
 	${CC} -Wall ${CCFLAGS} -o macping macping.c devices.o udp.o protocol.o
+
