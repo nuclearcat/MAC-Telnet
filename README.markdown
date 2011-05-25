@@ -3,9 +3,11 @@ MAC-Telnet / MAC SSH for Linux
 
 Based on the original work of haakonnessjoen (Håkon Nessjøen) that implements
 the following: 
-* A linux console tool for connecting to MikroTik RouterOS devices via their
+
+- A linux console tool for connecting to MikroTik RouterOS devices via their
 ethernet address.
-* Linux daemon that implements the MAC Telnet Daemon to permit connecting
+
+-Linux daemon that implements the MAC Telnet Daemon to permit connecting
 to Linux machines via their ethernet address.
 
 Forked to implement additional client and daemon that tunnels ssh connection
@@ -17,6 +19,7 @@ authentication works seamlessly permiting logins without password.
 
 The SSH versions of the client and daemon are not compatible with the Telnet
 versions.
+
 
 Installation
 ------------
