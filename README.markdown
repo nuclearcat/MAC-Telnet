@@ -114,7 +114,6 @@ Usage: macsshd
 --------------
 
     # macsshd -h
-    MAC-Telnet Daemon 0.3
     Usage: ./macsshd [-f|-n|-h] -p PORT
 
     Parameters:
