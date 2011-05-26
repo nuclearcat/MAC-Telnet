@@ -346,7 +346,7 @@ int main (int argc, char **argv) {
 			fprintf(stderr, "  -n        Do not use broadcast packets. Less insecure but requires root privileges.\n");
 			fprintf(stderr, "  -t        Amount of seconds to wait for a response on each interface.\n");
 			fprintf(stderr, "  -u        Specify username on command line.\n");
-			fprintf(stderr, "  -p        Specify terminal proxy port on command line.\n");
+			fprintf(stderr, "  -p        Specify TCP por for tunneling terminal client connection on command line.\n");
 			fprintf(stderr, "  -h        This help.\n");
 			fprintf(stderr, "\n");
 		}
