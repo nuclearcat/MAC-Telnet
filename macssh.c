@@ -1,6 +1,9 @@
 /*
-    Mac-Telnet - Connect to RouterOS or mactelnetd devices via MAC address
+    Mac-SSH - Client that tunnels ssh connections to SSH Daemon on macsshd 
+    enabled devices via MAC address.
+    Shameless hack by Ali Onur Uyar of code for mactelnet by Håkon Nessjøen.
     Copyright (C) 2010, Håkon Nessjøen <haakon.nessjoen@gmail.com>
+    Copyright (C) 2011, Ali Onur Uyar <aouyar@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
