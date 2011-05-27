@@ -49,25 +49,28 @@ protocol.o: protocol.c protocol.h
 
 devices.o: devices.c devices.h
 	${CC} -Wall ${CCFLAGS} -c devices.c
+	
+console.o: console.c console.h
+	${CC} -Wall ${CCFLAGS} -c console.c
 
 md5.o: md5.c md5.h
 	${CC} -Wall ${CCFLAGS} -c md5.c
 
-mactelnet: config.h udp.o mactelnet.c mactelnet.h protocol.o console.c console.h devices.o md5.o
-	${CC} -Wall ${CCFLAGS} -o mactelnet mactelnet.c udp.o protocol.o console.c devices.o md5.o
+mactelnet: mactelnet.c config.h mactelnet.h udp.o protocol.o console.o devices.o md5.o
+	${CC} -Wall ${CCFLAGS} -o mactelnet mactelnet.c udp.o protocol.o console.o devices.o md5.o
 
-mactelnetd: config.h mactelnetd.c udp.o protocol.o devices.o console.c console.h users.o users.h md5.o
-	${CC} -Wall ${CCFLAGS} -o mactelnetd mactelnetd.c udp.o protocol.o console.c devices.o users.o md5.o
+mactelnetd: mactelnetd.c  config.h udp.o protocol.o console.o users.o devices.o md5.o
+	${CC} -Wall ${CCFLAGS} -o mactelnetd mactelnetd.c udp.o protocol.o console.o devices.o users.o md5.o
 
-macssh: config.h udp.o macssh.c mactelnet.h protocol.o devices.o
+macssh: macssh.c mactelnet.h config.h udp.o protocol.o devices.o
 	${CC} -Wall ${CCFLAGS} -o macssh macssh.c udp.o protocol.o devices.o
 
-macsshd: config.h macsshd.c udp.o protocol.o devices.o
+macsshd: macsshd.c config.h udp.o protocol.o devices.o
 	${CC} -Wall ${CCFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o
 
-mndp: config.h mndp.c protocol.o
+mndp: mndp.c config.h protocol.o
 	${CC} -Wall ${CCFLAGS} -o mndp mndp.c protocol.o
 
-macping: config.h macping.c udp.o devices.o protocol.o
+macping: macping.c config.h udp.o devices.o protocol.o
 	${CC} -Wall ${CCFLAGS} -o macping macping.c devices.o udp.o protocol.o
 
