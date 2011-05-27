@@ -116,8 +116,11 @@ Usage: macssh
       -h        This help.
       
 Example:
-
-	 # macssh -n -p 22
+	
+	# ./macssh -n -u root 0:d:b9:1c:15:40
+	Waiting for remote terminal connection on port: 2222
+	Client connected from port: 58675
+	Connecting to 0:d:b9:1c:15:40...done
 
 
 Usage: macsshd
@@ -136,7 +139,4 @@ The server forwards connections to SSH server on a local port. Port 22 is used b
 
 Example:
 
-	 # ./macssh -n -u root 0:d:b9:1c:15:40
-	 Waiting for remote terminal connection on port: 2222
-	 Client connected from port: 58675
-	 Connecting to 0:d:b9:1c:15:40...done
+	 # macssh -n -p 22
