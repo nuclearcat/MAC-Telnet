@@ -96,6 +96,10 @@ Usage: mactelnetd
 
 Only existing system users listed in /etc/mactelnetd.users can be used for login using mactelnet. The password in /etc/mactelnetd.users is used instead of system passwords.
 
+Example:
+
+	 # mactelnetd -n
+
 
 Usage: macssh
 -------------
@@ -110,13 +114,17 @@ Usage: macssh
       -t        Amount of seconds to wait for a response on each interface.
       -u        Specify username on command line.
       -h        This help.
+      
+Example:
+
+	 # macssh -n -p 22
 
 
 Usage: macsshd
 --------------
 
     # macsshd -h
-    Usage: ./macsshd [-f|-n|-h] -p PORT
+    Usage: ./macsshd [-f|-n|-h] [-p PORT]
 
     Parameters:
       -f        Run process in foreground.
@@ -126,3 +134,9 @@ Usage: macsshd
 
 The server forwards connections to SSH server on a local port. Port 22 is used by default, but the port can be changed using the -p option.
 
+Example:
+
+	 # ./macssh -n -u root 0:d:b9:1c:15:40
+	 Waiting for remote terminal connection on port: 2222
+	 Client connected from port: 58675
+	 Connecting to 0:d:b9:1c:15:40...done

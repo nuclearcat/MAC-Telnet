@@ -349,7 +349,7 @@ int main (int argc, char **argv) {
 			fprintf(stderr, "  -n        Do not use broadcast packets. Less insecure but requires root privileges.\n");
 			fprintf(stderr, "  -t        Amount of seconds to wait for a response on each interface.\n");
 			fprintf(stderr, "  -u        Specify username on command line.\n");
-			fprintf(stderr, "  -p        Specify TCP por for tunneling terminal client connection on command line.\n");
+			fprintf(stderr, "  -p        Local TCP port for tunneling terminal client connection. (Default: 2222)\n");
 			fprintf(stderr, "  -h        This help.\n");
 			fprintf(stderr, "\n");
 		}
@@ -405,6 +405,10 @@ int main (int argc, char **argv) {
 		perror("fwdsrvfd");
 		return 1;
 	}
+	if(setsockopt(fwdsrvfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval)) < 0) {
+		perror("SO_REUSEADDR");
+		return 1;
+	}
 	
 	/* Bind to server socket for receiving terminal client connection. */
 	struct sockaddr_in srv_socket;
@@ -438,10 +442,6 @@ int main (int argc, char **argv) {
 		}
 		if(setsockopt(fwdfd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) < 0) {
 			perror("SO_KEEPALIVE");
-			return 1;
-		}
-		if(setsockopt(fwdfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval)) < 0) {
-			perror("SO_REUSEADDR");
 			return 1;
 		}
 		fprintf(stderr, "Client connected from port: %d\n", ntohs(cli_socket.sin_port));

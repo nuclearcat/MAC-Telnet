@@ -603,13 +603,13 @@ int main (int argc, char **argv) {
 
 	if (print_help) {
 		print_version();
-		fprintf(stderr, "Usage: %s [-f|-n|-h] -p PORT\n", argv[0]);
+		fprintf(stderr, "Usage: %s [-f|-n|-h] [-p PORT]\n", argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, "\nParameters:\n");
 			fprintf(stderr, "  -f        Run process in foreground.\n");
 			fprintf(stderr, "  -n        Do not use broadcast packets. Just a tad less insecure.\n");
-			fprintf(stderr, "  -p        Destination port.\n");
+			fprintf(stderr, "  -p        Local TCP port for listening SSH Daemon. (Port 22 by default.)\n");
 			fprintf(stderr, "  -h        This help.\n");
 			fprintf(stderr, "\n");
 		}
