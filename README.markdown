@@ -1,8 +1,10 @@
 MAC-Telnet / MAC SSH for Linux
 ==============================
 
-Based on the original work of haakonnessjoen (Håkon Nessjøen) that implements
-the following:
+Based on [MAC-Telnet](https://github.com/haakonnessjoen/MAC-Telnet) 
+the original work of 
+[haakonnessjoen](https://github.com/haakonnessjoen) (Håkon Nessjøen).
+The original version implements the following:
 
 * A linux console tool for connecting to MikroTik RouterOS devices via their
 ethernet address.
