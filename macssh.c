@@ -533,7 +533,7 @@ int main (int argc, char **argv) {
 				   of inactivity  */
 				if (keepalive_counter++ == 10) {
 					struct mt_packet odata;
-					int plen=0,result=0;
+					int plen=0;
 					plen = init_packet(&odata, MT_PTYPE_ACK, srcmac, dstmac, sessionkey, outcounter);
 					send_udp(&odata, 0);
 				}

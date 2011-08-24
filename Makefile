@@ -15,11 +15,11 @@ install: all install-docs
 	install mndp $(DESTDIR)/usr/bin/
 	install macping $(DESTDIR)/usr/bin/
 	install mactelnet $(DESTDIR)/usr/bin/
-    install macssh $(DESTDIR)/usr/bin/
+	install macssh $(DESTDIR)/usr/bin/
 	install -d $(DESTDIR)/usr/sbin
 	install -o root mactelnetd $(DESTDIR)/usr/sbin/
 	install -o root macsshd $(DESTDIR)/usr/sbin/
-    install -d $(DESTDIR)/etc
+	install -d $(DESTDIR)/etc
 	install -m 600 -o root config/mactelnetd.users $(DESTDIR)/etc/
 
 install-docs:
@@ -52,9 +52,6 @@ macssh: config.h udp.o macssh.c mactelnet.h protocol.o devices.o
 
 macsshd: config.h macsshd.c udp.o protocol.o devices.o
 	${CC} -Wall ${CFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o 
-
-macsshd: macsshd.c config.h udp.o protocol.o devices.o
-	${CC} -Wall ${CCFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o
 
 mndp: config.h mndp.c protocol.o
 	${CC} -Wall ${CFLAGS} -o mndp mndp.c protocol.o
