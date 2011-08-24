@@ -47,8 +47,11 @@ mactelnet: config.h udp.o mactelnet.c mactelnet.h protocol.o console.c console.h
 mactelnetd: config.h mactelnetd.c udp.o protocol.o devices.o console.c console.h users.o users.h md5.o
 	${CC} -Wall ${CFLAGS} -o mactelnetd mactelnetd.c udp.o protocol.o console.c devices.o users.o md5.o
 
-macssh: macssh.c mactelnet.h config.h udp.o protocol.o devices.o
-	${CC} -Wall ${CCFLAGS} -o macssh macssh.c udp.o protocol.o devices.o
+macssh: config.h udp.o macssh.c mactelnet.h protocol.o devices.o
+	${CC} -Wall ${CFLAGS} -o macssh macssh.c udp.o protocol.o devices.o
+
+macsshd: config.h macsshd.c udp.o protocol.o devices.o
+	${CC} -Wall ${CFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o 
 
 macsshd: macsshd.c config.h udp.o protocol.o devices.o
 	${CC} -Wall ${CCFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o

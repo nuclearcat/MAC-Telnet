@@ -40,8 +40,8 @@
 #include "config.h"
 #include "mactelnet.h"
 
-#define PROGRAM_NAME "MAC-Telnet"
-#define PROGRAM_VERSION "0.3"
+#define PROGRAM_NAME "MAC-SSH"
+#define PROGRAM_VERSION "0.3.2"
 
 static int sockfd;
 static int insockfd;
@@ -155,12 +155,11 @@ static int handle_packet(unsigned char *data, int data_len) {
 	if (pkthdr.ptype == MT_PTYPE_DATA) {
 		struct mt_packet odata;
 		struct mt_mactelnet_control_hdr cpkt;
-		int result=0;
 		int success = 0;
 
 		/* Always transmit ACKNOWLEDGE packets in response to DATA packets */
 		init_packet(&odata, MT_PTYPE_ACK, srcmac, dstmac, sessionkey, pkthdr.counter + (data_len - MT_HEADER_LEN));
-		result = send_udp(&odata, 0);
+		send_udp(&odata, 0);
 
 		/* Accept first packet, and all packets greater than incounter, and if counter has
 		wrapped around. */
@@ -202,11 +201,10 @@ static int handle_packet(unsigned char *data, int data_len) {
 	/* The server wants to terminate the connection, we have to oblige */
 	else if (pkthdr.ptype == MT_PTYPE_END) {
 		struct mt_packet odata;
-		int result=0;
 
 		/* Acknowledge the disconnection by sending a END packet in return */
 		init_packet(&odata, MT_PTYPE_END, srcmac, dstmac, pkthdr.seskey, 0);
-		result = send_udp(&odata, 0);
+		send_udp(&odata, 0);
 		fprintf(stderr, "Connection closed.\n");
 		/* exit */
 		running = 0;
@@ -527,7 +525,7 @@ int main (int argc, char **argv) {
 					init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, outcounter);
 					add_control_packet(&data, MT_CPTYPE_PLAINDATA, &keydata, datalen);
 					outcounter += datalen;
-					result = send_udp(&data, 1);
+					send_udp(&data, 1);
 				}
 			/* Handle select() timeout */
 			} else {
@@ -537,7 +535,7 @@ int main (int argc, char **argv) {
 					struct mt_packet odata;
 					int plen=0,result=0;
 					plen = init_packet(&odata, MT_PTYPE_ACK, srcmac, dstmac, sessionkey, outcounter);
-					result = send_udp(&odata, 0);
+					send_udp(&odata, 0);
 				}
 			}
 		}

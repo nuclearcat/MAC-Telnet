@@ -47,8 +47,8 @@
 #include "devices.h"
 #include "config.h"
 
-#define PROGRAM_NAME "MAC-Telnet Daemon"
-#define PROGRAM_VERSION "0.3"
+#define PROGRAM_NAME "MAC-SSH Daemon"
+#define PROGRAM_VERSION "0.3.2"
 
 #define MAX_INSOCKETS 100
 
