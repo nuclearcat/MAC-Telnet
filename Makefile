@@ -22,6 +22,18 @@ install: all install-docs
 	install -d $(DESTDIR)/etc
 	install -m 600 -o root config/mactelnetd.users $(DESTDIR)/etc/
 
+install-strip: all install-docs
+	install -d $(DESTDIR)/usr/bin
+	install -s mndp $(DESTDIR)/usr/bin/
+	install -s macping $(DESTDIR)/usr/bin/
+	install -s mactelnet $(DESTDIR)/usr/bin/
+	install -s macssh $(DESTDIR)/usr/bin/
+	install -d $(DESTDIR)/usr/sbin
+	install -s -o root mactelnetd $(DESTDIR)/usr/sbin/
+	install -s -o root macsshd $(DESTDIR)/usr/sbin/
+	install -d $(DESTDIR)/etc
+	install -m 600 -o root config/mactelnetd.users $(DESTDIR)/etc/
+
 install-docs:
 	install -d $(DESTDIR)/usr/share/man/man1/
 	install docs/*.1 $(DESTDIR)/usr/share/man/man1/
