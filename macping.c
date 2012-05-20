@@ -16,6 +16,8 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+#include <libintl.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
@@ -28,30 +30,25 @@
 #include <stdio.h>
 #include <float.h>
 #include "protocol.h"
-#include "udp.h"
-#include "devices.h"
+#include "interfaces.h"
 #include "config.h"
 
 #define MAX_DEVICES 128
 #define MT_INTERFACE_LEN 128
 
 #define PROGRAM_NAME "MAC-Ping"
-#define PROGRAM_VERSION "0.3.2"
+
+#define _(String) gettext (String)
 
 static int sockfd, insockfd;
 
-struct mt_device {
-	unsigned char mac[ETH_ALEN];
-	char name[MT_INTERFACE_LEN];
-	int device_index;
-};
-
 static unsigned short ping_size = 38;
-static struct mt_device devices[MAX_DEVICES];
-static int devices_count = 0;
+
+struct net_interface interfaces[MAX_INTERFACES];
+
 static struct in_addr sourceip;
 static struct in_addr destip;
-static unsigned char dstmac[6];
+static unsigned char dstmac[ETH_ALEN];
 
 static int ping_sent = 0;
 static int pong_received = 0;
@@ -64,29 +61,6 @@ unsigned char mt_direction_fromserver = 0;
 
 static void print_version() {
 	fprintf(stderr, PROGRAM_NAME " " PROGRAM_VERSION "\n");
-}
-
-static void setup_devices() {
-	char devicename[MT_INTERFACE_LEN];
-	unsigned char mac[ETH_ALEN];
-	unsigned char emptymac[ETH_ALEN];
-	int success;
-
-	memset(emptymac, 0, ETH_ALEN);
-
-	while ((success = get_macs(insockfd, devicename, MT_INTERFACE_LEN, mac))) {
-		if (memcmp(mac, emptymac, ETH_ALEN) != 0) {
-			struct mt_device *device = &(devices[devices_count]);
-
-			memcpy(device->mac, mac, ETH_ALEN);
-			strncpy(device->name, devicename, MT_INTERFACE_LEN - 1);
-			device->name[MT_INTERFACE_LEN - 1] = '\0';
-
-			device->device_index = get_device_index(insockfd, devicename);
-
-			devices_count++;
-		}
-	}
 }
 
 static long long int toddiff(struct timeval *tod1, struct timeval *tod2)
@@ -112,8 +86,8 @@ static void display_results() {
 	}
 
 	printf("\n");
-	printf("%d packets transmitted, %d packets received, %d%% packet loss\n", ping_sent, pong_received, 100 - percent);
-	printf("round-trip min/avg/max = %.2f/%.2f/%.2f ms\n", min_ms, avg_ms/pong_received, max_ms);
+	printf(_("%d packets transmitted, %d packets received, %d%% packet loss\n"), ping_sent, pong_received, 100 - percent);
+	printf(_("round-trip min/avg/max = %.2f/%.2f/%.2f ms\n"), min_ms, avg_ms/pong_received, max_ms);
 
 	/* For bash scripting */
 	if (pong_received == 0) {
@@ -132,6 +106,10 @@ int main(int argc, char **argv)  {
 	struct sockaddr_in si_me;
 	struct mt_packet packet;
 	int i;
+
+	setlocale(LC_ALL, "");
+	bindtextdomain("mactelnet","/usr/share/locale");
+	textdomain("mactelnet");
 
 	while (1) {
 		c = getopt(argc, argv, "fs:c:hv?");
@@ -168,48 +146,47 @@ int main(int argc, char **argv)  {
 
 	/* We don't want people to use this for the wrong reasons */
 	if (fastmode && (send_packets == 0 || send_packets > 100)) {
-		fprintf(stderr, "Number of packets to send must be more than 0 and less than 100 in fast mode.\n");
+		fprintf(stderr, _("Number of packets to send must be more than 0 and less than 100 in fast mode.\n"));
 		return 1;
 	}
 
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, "Usage: %s <MAC> [-h] [-f] [-c <count>] [-s <packet size>]\n", argv[0]);
+		fprintf(stderr, _("Usage: %s <MAC> [-h] [-f] [-c <count>] [-s <packet size>]\n"), argv[0]);
 
 		if (print_help) {
-			fprintf(stderr, "\nParameters:\n");
-			fprintf(stderr, "  MAC       MAC-Address of the RouterOS/mactelnetd device.\n");
-			fprintf(stderr, "  -f        Fast mode, do not wait before sending next ping request.\n");
-			fprintf(stderr, "  -s        Specify size of ping packet.\n");
-			fprintf(stderr, "  -c        Number of packets to send. (0 = unlimited)\n");
-			fprintf(stderr, "  -h        This help.\n");
-			fprintf(stderr, "\n");
+			fprintf(stderr, _("\nParameters:\n"
+			"  MAC       MAC-Address of the RouterOS/mactelnetd device.\n"
+			"  -f        Fast mode, do not wait before sending next ping request.\n"
+			"  -s        Specify size of ping packet.\n"
+			"  -c        Number of packets to send. (0 = unlimited)\n"
+			"  -h        This help.\n"
+			"\n"));
 		}
 		return 1;
 	}
 
 	if (ping_size > ETH_FRAME_LEN - 42) {
-		fprintf(stderr, "Packet size must be between 18 and %d\n", ETH_FRAME_LEN - 42 + 18);
+		fprintf(stderr, _("Packet size must be between 18 and %d\n"), ETH_FRAME_LEN - 42 + 18);
 		exit(1);
 	}
 
+	/* Mikrotik RouterOS does not answer unless the packet has the correct recipient mac-address in
+	 * the ethernet frame. Unlike real MacTelnet connections where the OS is ok with it being a
+	 * broadcast mac address.
+	 */
 	if (geteuid() != 0) {
-		fprintf(stderr, "You need to have root privileges to use %s.\n", argv[0]);
+		fprintf(stderr, _("You need to have root privileges to use %s.\n"), argv[0]);
 		return 1;
 	}
 
 	/* Get mac-address from string, or check for hostname via mndp */
-	if (!query_mndp_verbose(argv[optind], dstmac)) {
+	if (!query_mndp_or_mac(argv[optind], dstmac, 1)) {
 		/* No valid mac address found, abort */
 		return 1;
 	}
 
-	/* Open a UDP socket handle */
-	sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (sockfd < 0) {
-		perror("sockfd");
-		return 1;
-	}
+	sockfd = net_init_raw_socket();
 
 	insockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (insockfd < 0) {
@@ -227,7 +204,7 @@ int main(int argc, char **argv)  {
 
 	/* Bind to specified address/port */
 	if (bind(insockfd, (struct sockaddr *)&si_me, sizeof(si_me))==-1) {
-		fprintf(stderr, "Error binding to %s:%d\n", inet_ntoa(si_me.sin_addr), MT_MNDP_PORT);
+		fprintf(stderr, _("Error binding to %s:%d\n"), inet_ntoa(si_me.sin_addr), MT_MNDP_PORT);
 		return 1;
 	}
 
@@ -239,7 +216,8 @@ int main(int argc, char **argv)  {
 
 	srand(time(NULL));
 
-	setup_devices();
+	/* Enumerate available interfaces */
+	net_get_interfaces(interfaces, MAX_INTERFACES);
 
 	if (ping_size < sizeof(struct timeval)) {
 		ping_size = sizeof(struct timeval);
@@ -264,12 +242,20 @@ int main(int argc, char **argv)  {
 			pingdata[ii] = rand() % 256;
 		}
 
-		for (ii = 0; ii < devices_count; ++ii) {
-			struct mt_device *device = &devices[ii];
+		for (ii = 0; ii < MAX_INTERFACES; ++ii) {
+			struct net_interface *interface = &interfaces[ii];
 
-			init_pingpacket(&packet, device->mac, dstmac);
+			if (!interface->in_use) {
+				break;
+			}
+
+			if (!interface->has_mac) {
+				continue;
+			}
+
+			init_pingpacket(&packet, interface->mac_addr, dstmac);
 			add_packetdata(&packet, pingdata, ping_size);
-			result = send_custom_udp(sockfd, device->device_index, device->mac, dstmac, &sourceip, MT_MACTELNET_PORT, &destip, MT_MACTELNET_PORT, packet.data, packet.size);
+			result = net_send_udp(sockfd, interface, interface->mac_addr, dstmac, &sourceip, MT_MACTELNET_PORT, &destip, MT_MACTELNET_PORT, packet.data, packet.size);
 
 			if (result > 0) {
 				sent++;
@@ -277,7 +263,7 @@ int main(int argc, char **argv)  {
 
 		}
 		if (sent == 0) {
-			fprintf(stderr, "Error sending packet.\n");
+			fprintf(stderr, _("Error sending packet.\n"));
 			continue;
 		}
 		ping_sent++;
@@ -295,7 +281,7 @@ int main(int argc, char **argv)  {
 			reads = select(insockfd+1, &read_fds, NULL, NULL, &timeout);
 			if (reads <= 0) {
 				waitforpacket = 0;
-				fprintf(stderr, "%s ping timeout\n", ether_ntoa((struct ether_addr *)&dstmac));
+				fprintf(stderr, _("%s ping timeout\n"), ether_ntoa((struct ether_addr *)&dstmac));
 				break;
 			}
 
@@ -333,9 +319,9 @@ int main(int argc, char **argv)  {
 
 				avg_ms += diff;
 
-				printf("%s %d byte, ping time %.2f ms%s\n", ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result, diff, (char *)(memcmp(&pongtimestamp,&lasttimestamp,sizeof(lasttimestamp)) == 0 ? " DUP" : ""));
+				printf(_("%s %d byte, ping time %.2f ms%s\n"), ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result, diff, (char *)(memcmp(&pongtimestamp,&lasttimestamp,sizeof(lasttimestamp)) == 0 ? " DUP" : ""));
 			} else {
-				printf("%s Reply of %d bytes of unequal data\n", ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result);
+				printf(_("%s Reply of %d bytes of unequal data\n"), ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result);
 			}
 			pong_received++;
 			memcpy(&lasttimestamp, &pongtimestamp, sizeof(pongtimestamp));
