@@ -3,12 +3,12 @@ CC?=gcc
 
 # Run this with make LIBS=-lrt if you want to compile on kfreebsd
 
-all: macping mndp mactelnet mactelnetd macssh macsshd
+all: macping mndp mactelnet mactelnetd
 
 clean: dist-clean
 
 dist-clean:
-	rm -f mactelnet macping mactelnetd macssh macsshd mndp
+	rm -f mactelnet macping mactelnetd mndp
 	rm -f *.o
 
 dist: dist-clean po/mactelnet.pot
@@ -18,10 +18,8 @@ install: all install-docs
 	install mndp $(DESTDIR)/usr/bin/
 	install macping $(DESTDIR)/usr/bin/
 	install mactelnet $(DESTDIR)/usr/bin/
-	install macssh $(DESTDIR)/usr/bin/
 	install -d $(DESTDIR)/usr/sbin
 	install -o root mactelnetd $(DESTDIR)/usr/sbin/
-	install -o root macsshd $(DESTDIR)/usr/sbin/
 	install -d $(DESTDIR)/etc
 	install -m 600 -o root config/mactelnetd.users $(DESTDIR)/etc/
 
@@ -30,10 +28,8 @@ install-strip: all install-docs
 	install -s mndp $(DESTDIR)/usr/bin/
 	install -s macping $(DESTDIR)/usr/bin/
 	install -s mactelnet $(DESTDIR)/usr/bin/
-	install -s macssh $(DESTDIR)/usr/bin/
 	install -d $(DESTDIR)/usr/sbin
 	install -s -o root mactelnetd $(DESTDIR)/usr/sbin/
-	install -s -o root macsshd $(DESTDIR)/usr/sbin/
 	install -d $(DESTDIR)/etc
 	install -m 600 -o root config/mactelnetd.users $(DESTDIR)/etc/
 
@@ -61,12 +57,6 @@ mactelnet: config.h mactelnet.c mactelnet.h protocol.o console.c console.h inter
 
 mactelnetd: config.h mactelnetd.c protocol.o interfaces.o console.c console.h users.o users.h md5.o
 	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o mactelnetd mactelnetd.c protocol.o console.c interfaces.o users.o md5.o ${LIBS}
-
-macssh: config.h udp.o macssh.c mactelnet.h protocol.o devices.o
-	${CC} -Wall ${CFLAGS} -o macssh macssh.c udp.o protocol.o devices.o
-
-macsshd: config.h macsshd.c udp.o protocol.o devices.o
-	${CC} -Wall ${CFLAGS} -o macsshd macsshd.c udp.o protocol.o devices.o 
 
 mndp: config.h mndp.c protocol.o
 	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o mndp mndp.c protocol.o ${LIBS}

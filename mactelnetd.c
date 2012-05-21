@@ -77,10 +77,12 @@ static int pings = 0;
 struct net_interface interfaces[MAX_INTERFACES];
 
 static int use_raw_socket = 0;
+static int use_ssh = 0;
 
 static struct in_addr sourceip; 
 static struct in_addr destip;
 static int sourceport;
+static int fwdport = 22;
 
 static time_t last_mndp_time = 0;
 
@@ -899,7 +901,7 @@ int main (int argc, char **argv) {
 	bindtextdomain("mactelnet","/usr/share/locale");
 	textdomain("mactelnet");
 
-	while ((c = getopt(argc, argv, "fnvh?")) != -1) {
+	while ((c = getopt(argc, argv, "fnvh?sP:")) != -1) {
 		switch (c) {
 			case 'f':
 				foreground = 1;
@@ -907,6 +909,14 @@ int main (int argc, char **argv) {
 
 			case 'n':
 				use_raw_socket = 1;
+				break;
+
+			case 's':
+				use_ssh = 1;
+				break;
+
+			case 'P':
+				fwdport = atoi(optarg);
 				break;
 
 			case 'v':
@@ -924,15 +934,16 @@ int main (int argc, char **argv) {
 
 	if (print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s [-f|-n|-h]\n"), argv[0]);
-
-		if (print_help) {
-			fprintf(stderr, _("\nParameters:\n"
-			"  -f        Run process in foreground.\n"
-			"  -n        Do not use broadcast packets. Just a tad less insecure.\n"
-			"  -h        This help.\n"
-			"\n"));
-		}
+		fprintf(stderr, _("Usage: %s [-v] [-h] [-s] [-P port] [-n] [-f]\n"), argv[0]);
+		fprintf(stderr, _("\nParameters:\n"
+				"  -v        Print version and exit.\n"
+				"  -h        Print help and exit.\n"
+				"  -f        Run process in foreground.\n"
+				"  -n        Do not use broadcast packets. Just a tad less insecure.\n"
+				"  -s        Use MAC-SSH instead of MAC-Telnet.\n"
+				"  -P        Local TCP port for SSH Daemon.\n"
+				"            (If not specified, port 22 by default.)\n"
+				"\n"));
 		return 1;
 	}
 

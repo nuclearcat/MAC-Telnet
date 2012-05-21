@@ -58,6 +58,7 @@ static int running = 1;
 
 static unsigned char use_raw_socket = 0;
 static unsigned char terminal_mode = 0;
+static int use_ssh = 0;
 
 static unsigned char srcmac[ETH_ALEN];
 static unsigned char dstmac[ETH_ALEN];
@@ -65,6 +66,7 @@ static unsigned char dstmac[ETH_ALEN];
 static struct in_addr sourceip; 
 static struct in_addr destip;
 static int sourceport;
+static int fwdport = 2222;
 
 static int connect_timeout = CONNECT_TIMEOUT;
 
@@ -408,7 +410,7 @@ int main (int argc, char **argv) {
 	textdomain("mactelnet");
 
 	while (1) {
-		c = getopt(argc, argv, "nqt:u:p:vh?");
+		c = getopt(argc, argv, "nqt:u:p:vh?sP:");
 
 		if (c == -1) {
 			break;
@@ -418,6 +420,14 @@ int main (int argc, char **argv) {
 
 			case 'n':
 				use_raw_socket = 1;
+				break;
+
+			case 's':
+				use_ssh = 1;
+				break;
+
+			case 'P':
+				fwdport = atoi(optarg);
 				break;
 
 			case 'u':
@@ -456,18 +466,22 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s <MAC|identity> [-h] [-n] [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-s] [-P port] [-n] [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
+			"  -v        Print version and exit.\n"
+			"  -h        Print help and exit.\n"
 			"  MAC       MAC-Address of the RouterOS/mactelnetd device. Use mndp to discover it.\n"
 			"  identity  The identity/name of your destination device. Uses MNDP protocol to find it.\n"
 			"  -n        Do not use broadcast packets. Less insecure but requires root privileges.\n"
 			"  -t        Amount of seconds to wait for a response on each interface.\n"
 			"  -u        Specify username on command line.\n"
 			"  -p        Specify password on command line.\n"
+			"  -s        Use MAC-SSH instead of MAC-Telnet.\n"
+			"  -P port   Local TCP port for forwarding SSH connection.\n"
+			"            (If not specified, port 2222 by default.)\n"
 			"  -q        Quiet mode.\n"
-			"  -h        This help.\n"
 			"\n"));
 		}
 		return 1;
