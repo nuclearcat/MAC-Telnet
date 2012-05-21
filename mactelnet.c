@@ -2,6 +2,10 @@
     Mac-Telnet - Connect to RouterOS or mactelnetd devices via MAC address
     Copyright (C) 2010, Håkon Nessjøen <haakon.nessjoen@gmail.com>
 
+    Shameless hack by Ali Onur Uyar to add support for SSH Tunneling through
+    MAC-Telnet protocol.
+    Copyright (C) 2011, Ali Onur Uyar <aouyar@gmail.com>
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -50,6 +54,7 @@
 
 static int sockfd = 0;
 static int insockfd;
+static int fwdfd = 0;
 
 static unsigned int outcounter = 0;
 static unsigned int incounter = 0;
@@ -102,6 +107,7 @@ static int send_udp(struct mt_packet *packet, int retransmit) {
 	if (!use_raw_socket) {
 		/* Init SendTo struct */
 		struct sockaddr_in socket_address;
+		memset(&socket_address, 0, sizeof(socket_address));
 		socket_address.sin_family = AF_INET;
 		socket_address.sin_port = htons(MT_MACTELNET_PORT);
 		socket_address.sin_addr.s_addr = htonl(INADDR_BROADCAST);
@@ -255,21 +261,37 @@ static int handle_packet(unsigned char *data, int data_len) {
 		while (success) {
 
 			/* If we receive encryptionkey, transmit auth data back */
-			if (cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY) {
+			if (cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY && !use_ssh) {
 				memcpy(encryptionkey, cpkt.data, cpkt.length);
 				send_auth(username, password);
+			}
+			/* Using MAC-SSH server must not send authentication request.
+			 * Authentication is handled by tunneled SSH Client and Server.
+			 */
+			else if (cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY && use_ssh) {
+				fprintf(stderr, _("Server %s does not seem to use MAC-SSH Protocol. Try MAC-Telnet instead.\n"), ether_ntoa((struct ether_addr *)dstmac));
+				return -1;
 			}
 
 			/* If the (remaining) data did not have a control-packet magic byte sequence,
 			   the data is raw terminal data to be outputted to the terminal. */
-			else if (cpkt.cptype == MT_CPTYPE_PLAINDATA) {
+			else if (cpkt.cptype == MT_CPTYPE_PLAINDATA && !use_ssh) {
 				cpkt.data[cpkt.length] = 0;
 				printf("%s", cpkt.data);
+			}
+			/* If the (remaining) data did not have a control-packet magic byte sequence,
+			   the data is raw terminal data to be tunneled to local SSH Client. */
+			else if (cpkt.cptype == MT_CPTYPE_PLAINDATA && !use_ssh) {
+				if (send(fwdfd, cpkt.data, cpkt.length, 0) < 0) {
+					fprintf(stderr, "Terminal client disconnected.\n");
+					/* exit */
+					running = 0;
+				}
 			}
 
 			/* END_AUTH means that the user/password negotiation is done, and after this point
 			   terminal data may arrive, so we set up the terminal to raw mode. */
-			else if (cpkt.cptype == MT_CPTYPE_END_AUTH) {
+			else if (cpkt.cptype == MT_CPTYPE_END_AUTH && !use_ssh) {
 
 				/* we have entered "terminal mode" */
 				terminal_mode = 1;
@@ -527,14 +549,14 @@ int main (int argc, char **argv) {
 		return 1;
 	}
 
-	if (!have_username) {
+	if (!have_username && !use_ssh) {
 		if (!quiet_mode) {
 			printf(_("Login: "));
 		}
 		scanf("%254s", username);
 	}
 
-	if (!have_password) {
+	if (!have_password && !use_ssh) {
 		char *tmp;
 		tmp = getpass(quiet_mode ? "" : _("Password: "));
 		strncpy(password, tmp, sizeof(password) - 1);
@@ -546,6 +568,98 @@ int main (int argc, char **argv) {
 #endif
 	}
 
+	if (use_ssh) {
+		/* Setup signal handler for broken tunnels. */
+		signal(SIGPIPE,SIG_IGN);
+
+		/* Setup Server socket for receiving connection from local SSH Client. */
+		int fwdsrvfd;
+		fwdsrvfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (fwdsrvfd < 0) {
+			perror("fwdsrvfd");
+			return 1;
+		}
+		if(setsockopt(fwdsrvfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval)) < 0) {
+			perror("SO_REUSEADDR");
+			return 1;
+		}
+
+		/* Bind to server socket for receiving terminal client connection. */
+		struct sockaddr_in srv_socket;
+		memset(&srv_socket, 0, sizeof(srv_socket));
+		srv_socket.sin_family = AF_INET;
+		srv_socket.sin_port = htons(fwdport);
+		srv_socket.sin_addr.s_addr = inet_addr("127.0.0.1");
+		if (bind(fwdsrvfd, (struct sockaddr *) &srv_socket, sizeof(srv_socket)) < 0) {
+			fprintf(stderr, _("Error binding to %s:%d, %s\n"), "127.0.0.1", fwdport, strerror(errno));
+			return 1;
+		}
+		if (listen(fwdsrvfd, 1) < 0) {
+			fprintf(stderr, _("Failed listen on server socket %s:%d, %s\n"), "127.0.0.1", fwdport, strerror(errno));
+			return 1;
+		}
+
+		/* Fork child to execute SSH Client locally and connect to parent
+		 * waiting for connection from child.
+		 */
+
+		int pid;
+		if ((pid = fork()) > 0) {
+			/* Parent code. Waits for connection from child which execs SSH Client. */
+
+			/* Close stdin and stdout, leave stderr active for error messages.
+			 * SSH Client will be handling the terminal. */
+			close(0);
+			close(1);
+
+			/* Wait for remote terminal client connection on server port. */
+			fprintf(stderr, _("Waiting for remote terminal connection on port: %d\n"), fwdport);
+			struct sockaddr_in cli_socket;
+			unsigned int cli_socket_len = sizeof(cli_socket);
+			memset(&cli_socket, 0, sizeof(cli_socket));
+			if ((fwdfd = accept(fwdsrvfd, (struct sockaddr *) &cli_socket, &cli_socket_len)) < 0) {
+				perror("fwdfd");
+			}
+			if(setsockopt(fwdfd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) < 0) {
+				perror("SO_KEEPALIVE");
+				return 1;
+			}
+			fprintf(stderr, _("Client connected from port: %d\n"), ntohs(cli_socket.sin_port));
+		}
+		else if (pid == 0) {
+			/* Child Code. Executes SSH Client and connects to parent to tunnel
+			 * connection through MAC-Telnet protocol. */
+			if (use_raw_socket) {
+				close(sockfd);
+			}
+			close(insockfd);
+			close(fwdsrvfd);
+
+			/* Give time to parent to initialize listening port. */
+			sleep(2);
+
+			/* Execute SSH Client. */
+			char portstr[8];
+			snprintf(portstr, 8, "%d", fwdport);
+			if (have_username) {
+				execlp("ssh", "ssh", "-p", portstr, "-l", username, "127.0.0.1", (char *) 0);
+			}
+			else {
+				execlp("ssh", "ssh", "-p", portstr, "127.0.0.1", (char *) 0);
+			}
+			perror("Execution of terminal client failed.");
+			exit(1);
+		}
+		/* Fork failure. */
+		else {
+			fprintf(stderr, _("Execution of terminal client failed.\n"));
+			if (use_raw_socket) {
+				close(sockfd);
+			}
+			close(insockfd);
+			return 1;
+		}
+	}
 
 	/* Set random source port */
 	sourceport = 1024 + (rand() % 1024);
@@ -554,7 +668,7 @@ int main (int argc, char **argv) {
 	inet_pton(AF_INET, (char *)"255.255.255.255", &destip);
 	memcpy(&sourceip, &(si_me.sin_addr), IPV4_ALEN);
 
-	/* Sessioon key */
+	/* Session key */
 	sessionkey = rand() % 65535;
 
 	/* stop output buffering */
@@ -598,10 +712,18 @@ int main (int argc, char **argv) {
 		static int terminal_gone = 0;
 		struct timeval timeout;
 
+		int maxfd = 0;
+		maxfd = insockfd > fwdfd ? insockfd : fwdfd;
+
 		/* Init select */
 		FD_ZERO(&read_fds);
-		if (!terminal_gone) {
+		if (!terminal_gone && !use_ssh) {
+			/* Setup fd to read input from terminal. */
 			FD_SET(0, &read_fds);
+		}
+		else if (use_ssh) {
+			/* Setup fd to read input from local SSH Client. */
+			FD_SET(fwdfd, &read_fds);
 		}
 		FD_SET(insockfd, &read_fds);
 
@@ -609,7 +731,7 @@ int main (int argc, char **argv) {
 		timeout.tv_usec = 0;
 
 		/* Wait for data or timeout */
-		reads = select(insockfd+1, &read_fds, NULL, NULL, &timeout);
+		reads = select(maxfd+1, &read_fds, NULL, NULL, &timeout);
 		if (reads > 0) {
 			/* Handle data from server */
 			if (FD_ISSET(insockfd, &read_fds)) {
@@ -617,22 +739,25 @@ int main (int argc, char **argv) {
 				result = recvfrom(insockfd, buff, 1500, 0, 0, 0);
 				handle_packet(buff, result);
 			}
+			unsigned char keydata[512];
+			int datalen = 0;
 			/* Handle data from keyboard/local terminal */
-			if (FD_ISSET(0, &read_fds) && terminal_mode) {
-				unsigned char keydata[512];
-				int datalen;
-
+			if (!use_ssh && FD_ISSET(0, &read_fds) && terminal_mode) {
 				datalen = read(STDIN_FILENO, &keydata, 512);
-
-				if (datalen > 0) {
-					/* Data received, transmit to server */
-					init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, outcounter);
-					add_control_packet(&data, MT_CPTYPE_PLAINDATA, &keydata, datalen);
-					outcounter += datalen;
-					send_udp(&data, 1);
-				} else {
-					terminal_gone = 1;
-				}
+			}
+			/* Handle data from local SSH client */
+			if (use_ssh && FD_ISSET(fwdfd, &read_fds)) {
+				datalen = read(fwdfd, &keydata, 512);
+			}
+			if (datalen > 0) {
+				/* Data received, transmit to server */
+				init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, outcounter);
+				add_control_packet(&data, MT_CPTYPE_PLAINDATA, &keydata, datalen);
+				outcounter += datalen;
+				send_udp(&data, 1);
+			}
+			else if (datalen < 0) {
+				terminal_gone = 1;
 			}
 		/* Handle select() timeout */
 		} else {
@@ -646,13 +771,16 @@ int main (int argc, char **argv) {
 		}
 	}
 
-	if (is_a_tty && terminal_mode) {
+	if (!use_ssh && is_a_tty && terminal_mode) {
 		/* Reset terminal back to old settings */
 		reset_term();
 	}
 
 	close(sockfd);
 	close(insockfd);
+	if (use_ssh && fwdfd > 0) {
+		close(fwdfd);
+	}
 
 	return 0;
 }
