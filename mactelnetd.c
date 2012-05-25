@@ -86,7 +86,7 @@ static int tunnel_conn = 0;
 static struct in_addr sourceip; 
 static struct in_addr destip;
 static int sourceport;
-static int fwdport = 22;
+static int fwdport = MT_TUNNEL_SERVER_PORT;
 
 static time_t last_mndp_time = 0;
 
@@ -117,6 +117,7 @@ struct mt_connection {
 	enum mt_connection_state state;
 	int ptsfd;
 	int slavefd;
+	int fwdfd;
 	int pid;
 	int wait_for_ack;
 	int have_enckey;
@@ -160,14 +161,19 @@ static void list_remove_connection(struct mt_connection *conn) {
 		return;
 	}
 
-	if (conn->state == STATE_ACTIVE && conn->ptsfd > 0) {
+	if (!tunnel_conn && conn->state == STATE_ACTIVE && conn->ptsfd > 0) {
 		close(conn->ptsfd);
 	}
-	if (conn->state == STATE_ACTIVE && conn->slavefd > 0) {
+	if (!tunnel_conn && conn->state == STATE_ACTIVE && conn->slavefd > 0) {
 		close(conn->slavefd);
 	}
+	if (tunnel_conn && conn->state == STATE_ACTIVE && conn->fwdfd > 0) {
+			close(conn->fwdfd);
+	}
 
-	uwtmp_logout(conn);
+	if (!tunnel_conn) {
+		uwtmp_logout(conn);
+	}
 
 	if (connections_head == conn) {
 		connections_head = conn->next;
@@ -538,10 +544,52 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 
 }
 
+static void setup_tunnel(struct mt_connection *curconn, struct mt_mactelnet_hdr *pkthdr) {
+	struct mt_packet pdata;
+
+	init_packet(&pdata, MT_PTYPE_DATA, pkthdr->dstaddr, pkthdr->srcaddr, pkthdr->seskey, curconn->outcounter);
+	curconn->outcounter += add_control_packet(&pdata, MT_CPTYPE_END_AUTH, NULL, 0);
+	send_udp(curconn, &pdata);
+
+	if (curconn->state == STATE_ACTIVE) {
+		return;
+	}
+
+	/* Setup socket for connecting tunnel to server port. */
+	curconn->fwdfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (curconn->fwdfd < 0) {
+		syslog(LOG_ERR, "Socket creation error: %s", strerror(errno));
+		abort_connection(curconn, pkthdr, _("Socket error.\r\n"));
+		return;
+	}
+	int optval = 1;
+	if(setsockopt(curconn->fwdfd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) < 0) {
+		syslog(LOG_ERR, "Error in setting SO_KEEPALIVE option for socket: %s", strerror(errno));
+		abort_connection(curconn, pkthdr, _("Socket error.\r\n"));
+		return;
+	}
+
+	/* Connect to terminal server port */
+	struct sockaddr_in socket_address;
+	memset(&socket_address, 0, sizeof(socket_address));
+	socket_address.sin_family = AF_INET;
+	socket_address.sin_port = htons(fwdport);
+	socket_address.sin_addr.s_addr = inet_addr("127.0.0.1");
+	if (connect(curconn->fwdfd, (struct sockaddr *) &socket_address, sizeof(socket_address)) < 0) {
+		syslog(LOG_ERR, "Error in connection of tunnel to server port: %s", strerror(errno));
+		abort_connection(curconn, pkthdr, _("Error in connection of tunnel to server.\r\n"));
+		return;
+    }
+
+	/* User is logged in */
+	curconn->state = STATE_ACTIVE;
+}
+
 static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelnet_hdr *pkthdr, int data_len) {
 	struct mt_mactelnet_control_hdr cpkt;
 	struct mt_packet pdata;
 	unsigned char *data = pkthdr->data;
+	int got_auth_packet = 0;
 	int got_user_packet = 0;
 	int got_pass_packet = 0;
 	int got_width_packet = 0;
@@ -552,7 +600,7 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 	success = parse_control_packet(data, data_len - MT_HEADER_LEN, &cpkt);
 
 	while (success) {
-		if (cpkt.cptype == MT_CPTYPE_BEGINAUTH) {
+		if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_BEGINAUTH) {
 			int plen,i;
 			if (!curconn->have_enckey) {
 				for (i = 0; i < 16; ++i) {
@@ -567,6 +615,10 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 			curconn->outcounter += plen;
 
 			send_udp(curconn, &pdata);
+			got_auth_packet = 1;
+		}
+		else if (tunnel_conn && cpkt.cptype == MT_CPTYPE_BEGINAUTH) {
+			got_auth_packet = 1;
 
 		} else if (cpkt.cptype == MT_CPTYPE_USERNAME) {
 
@@ -601,10 +653,16 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 		} else if (cpkt.cptype == MT_CPTYPE_PLAINDATA) {
 
 			/* relay data from client to shell */
-			if (curconn->state == STATE_ACTIVE && curconn->ptsfd != -1) {
+			if (!tunnel_conn && curconn->state == STATE_ACTIVE && curconn->ptsfd != -1) {
 				write(curconn->ptsfd, cpkt.data, cpkt.length);
 			}
-
+			if (tunnel_conn && curconn->state == STATE_ACTIVE && curconn->fwdfd != -1) {
+				if (send(curconn->fwdfd, cpkt.data, cpkt.length, 0) <= 0) {
+					syslog(LOG_INFO, "(%d) Connection from tunnel to server port closed.", curconn->seskey);
+					abort_connection(curconn, pkthdr, _("Server port disconnection.\r\n"));
+					return;
+				}
+			}
 		} else {
 			syslog(LOG_WARNING, _("(%d) Unhandeled control packet type: %d"), curconn->seskey, cpkt.cptype);
 		}
@@ -613,11 +671,15 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 		success = parse_control_packet(NULL, 0, &cpkt);
 	}
 	
-	if (got_user_packet && got_pass_packet) {
+	if (!tunnel_conn && got_user_packet && got_pass_packet) {
 		user_login(curconn, pkthdr);
 	}
 	
-	if (curconn->state == STATE_ACTIVE && (got_width_packet || got_height_packet)) {
+	if (tunnel_conn && got_auth_packet) {
+		setup_tunnel(curconn, pkthdr);
+	}
+
+	if (!tunnel_conn && curconn->state == STATE_ACTIVE && (got_width_packet || got_height_packet)) {
 		set_terminal_size(curconn->ptsfd, curconn->terminal_width, curconn->terminal_height);
 
 	}
@@ -962,7 +1024,9 @@ int main (int argc, char **argv) {
 	}
 
 	/* Try to read user file */
-	read_userfile();
+	if (!tunnel_conn) {
+		read_userfile();
+	}
 
 	/* Seed randomizer */
 	srand(time(NULL));
@@ -1039,7 +1103,8 @@ int main (int argc, char **argv) {
 	signal(SIGCHLD,SIG_IGN);
 	signal(SIGTSTP,SIG_IGN);
 	signal(SIGTTOU,SIG_IGN);
-	signal(SIGTTIN,SIG_IGN);	
+	signal(SIGTTIN,SIG_IGN);
+	signal(SIGPIPE,SIG_IGN);
 	signal(SIGHUP, sighup_handler);
 	signal(SIGTERM, sigterm_handler);
 
@@ -1068,10 +1133,16 @@ int main (int argc, char **argv) {
 
 		/* Add active connections to select queue */
 		for (p = connections_head; p != NULL; p = p->next) {
-			if (p->state == STATE_ACTIVE && p->wait_for_ack == 0 && p->ptsfd > 0) {
+			if (!tunnel_conn && p->state == STATE_ACTIVE && p->wait_for_ack == 0 && p->ptsfd > 0) {
 				FD_SET(p->ptsfd, &read_fds);
 				if (p->ptsfd > maxfd) {
 					maxfd = p->ptsfd;
+				}
+			}
+			else if (tunnel_conn && p->state == STATE_ACTIVE && p->wait_for_ack == 0 && p->fwdfd > 0) {
+				FD_SET(p->fwdfd, &read_fds);
+				if (p->fwdfd > maxfd) {
+					maxfd = p->fwdfd;
 				}
 			}
 		}
@@ -1104,15 +1175,21 @@ int main (int argc, char **argv) {
 					time(&last_mndp_time);
 				}
 			}
-			/* Handle data from terminal sessions */
+			/* Handle data from terminal sessions or tunnels. */
 			for (p = connections_head; p != NULL; p = p->next) {
-				/* Check if we have data ready in the pty buffer for the active session */
-				if (p->state == STATE_ACTIVE && p->ptsfd > 0 && p->wait_for_ack == 0 && FD_ISSET(p->ptsfd, &read_fds)) {
+				/* Check if we have data ready in the pty / tunnel buffer for the active session */
+				if ((p->state == STATE_ACTIVE && p->wait_for_ack == 0) &&
+						((!tunnel_conn && p->ptsfd > 0 && FD_ISSET(p->ptsfd, &read_fds))
+						|| (tunnel_conn && p->fwdfd > 0 && FD_ISSET(p->fwdfd, &read_fds)))) {
 					unsigned char keydata[1024];
 					int datalen,plen;
 
 					/* Read it */
-					datalen = read(p->ptsfd, &keydata, 1024);
+					if (!tunnel_conn) {
+						datalen = read(p->ptsfd, &keydata, 1024);
+					} else {
+						datalen = read(p->fwdfd, &keydata, 1024);
+					}
 					if (datalen > 0) {
 						/* Send it */
 						init_packet(&pdata, MT_PTYPE_DATA, p->dstmac, p->srcmac, p->seskey, p->outcounter);
@@ -1125,7 +1202,10 @@ int main (int argc, char **argv) {
 						struct mt_connection tmp;
 						init_packet(&pdata, MT_PTYPE_END, p->dstmac, p->srcmac, p->seskey, p->outcounter);
 						send_udp(p, &pdata);
-						if (p->username != NULL) {
+						if (tunnel_conn) {
+							syslog(LOG_INFO, _("(%d) Connection to server closed."), p->seskey);
+						}
+						else if (p->username != NULL) {
 							syslog(LOG_INFO, _("(%d) Connection to user %s closed."), p->seskey, p->username);
 						} else {
 							syslog(LOG_INFO, _("(%d) Connection closed."), p->seskey);
@@ -1135,7 +1215,7 @@ int main (int argc, char **argv) {
 						p = &tmp;
 					}
 				}
-				else if (p->state == STATE_ACTIVE && p->ptsfd > 0 && p->wait_for_ack == 1 && FD_ISSET(p->ptsfd, &read_fds)) {
+				else if (!tunnel_conn && p->state == STATE_ACTIVE && p->ptsfd > 0 && p->wait_for_ack == 1 && FD_ISSET(p->ptsfd, &read_fds)) {
 					printf(_("(%d) Waiting for ack\n"), p->seskey);
 				}
 			}

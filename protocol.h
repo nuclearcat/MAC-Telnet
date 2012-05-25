@@ -36,6 +36,9 @@
 #define MT_SOFTID_MACTELNET "MAC-Telnet"
 #define MT_SOFTID_MACSSH "MAC-SSH"
 
+#define MT_TUNNEL_CLIENT_PORT 2222
+#define MT_TUNNEL_SERVER_PORT 22
+
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
 #endif

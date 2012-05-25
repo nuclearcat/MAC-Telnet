@@ -72,7 +72,7 @@ static unsigned char dstmac[ETH_ALEN];
 static struct in_addr sourceip; 
 static struct in_addr destip;
 static int sourceport;
-static int fwdport = 2222;
+static int fwdport = MT_TUNNEL_CLIENT_PORT;
 
 static int connect_timeout = CONNECT_TIMEOUT;
 
