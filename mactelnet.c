@@ -509,7 +509,7 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-l] [-S] [-P port] [-n]\n"
+		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-S] [-P port]\n"
 				          "       [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
 
 		if (print_help) {
