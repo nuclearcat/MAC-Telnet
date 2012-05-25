@@ -1017,16 +1017,16 @@ int main (int argc, char **argv) {
 
 	if (print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s [-v] [-h] [-S] [-P port] [-n] [-f]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s [-v] [-h] [-S] [-P <port>] [-n] [-f]\n"), argv[0]);
 		fprintf(stderr, _("\nParameters:\n"
-				"  -f        Run process in foreground.\n"
-				"  -n        Do not use broadcast packets. Just a tad less insecure.\n"
-				"  -S / -F   Tunneling of TCP connections through  MAC-Telnet protocol,\n"
-				"            instead of standard MAC-Telnet use.\n"
-				"  -P        Local TCP port for SSH Daemon.\n"
-				"            (If not specified, port 22 by default.)\n"
-				"  -v        Print version and exit.\n"
-				"  -h        Print help and exit.\n"
+				"  -f         Run process in foreground.\n"
+				"  -n         Do not use broadcast packets. Just a tad less insecure.\n"
+				"  -S / -F    Tunneling of TCP connections through  MAC-Telnet protocol,\n"
+				"             instead of standard MAC-Telnet use.\n"
+				"  -P <port>  Local TCP port for SSH Daemon.\n"
+				"             (If not specified, port 22 by default.)\n"
+				"  -v         Print version and exit.\n"
+				"  -h         Print help and exit.\n"
 				"\n"));
 		return 1;
 	}

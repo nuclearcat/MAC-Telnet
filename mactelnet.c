@@ -48,6 +48,7 @@
 #include "config.h"
 #include "mactelnet.h"
 #include "mndp.h"
+#include "libgen.h"
 
 #define PROGRAM_NAME "MAC-Telnet"
 
@@ -94,6 +95,9 @@ struct net_interface *active_interface;
 unsigned char mt_direction_fromserver = 0;
 
 static unsigned int send_socket;
+
+/* SSH Executable Path */
+static char ssh_path[512];
 
 static int handle_packet(unsigned char *data, int data_len);
 
@@ -443,8 +447,12 @@ int main (int argc, char **argv) {
 	bindtextdomain("mactelnet","/usr/share/locale");
 	textdomain("mactelnet");
 
+	/* Set default for ssh_path. */
+	strncpy(ssh_path, SSH_PATH, sizeof(ssh_path) -1);
+	ssh_path[sizeof(ssh_path)] = '\0';
+
 	while (1) {
-		c = getopt(argc, argv, "nqlt:u:p:vh?SFP:");
+		c = getopt(argc, argv, "nqlt:u:p:vh?SFP:c:");
 
 		if (c == -1) {
 			break;
@@ -483,6 +491,12 @@ int main (int argc, char **argv) {
 				have_password = 1;
 				break;
 
+			case 'c':
+				/* Save ssh executable path */
+				strncpy(ssh_path, optarg, sizeof(ssh_path) -1);
+				ssh_path[sizeof(ssh_path)] = '\0';
+				break;
+
 			case 't':
 				connect_timeout = atoi(optarg);
 				break;
@@ -509,30 +523,31 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-S] [-P port]\n"
-				          "       [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-S] [-P <port>]\n"
+				          "       [-t <timeout>] [-u <username>] [-p <password>] [-c <path>]\n"), argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
-			"  MAC       MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
-            "            discover it.\n"
-			"  identity  The identity/name of your destination device. Uses MNDP protocol \n"
-			"            to find it.\n"
-			"  -l        List/Search for routers nearby. (using MNDP)\n"
-			"  -n        Do not use broadcast packets. Less insecure but requires root \n"
-		    "            privileges.\n"
-			"  -t        Amount of seconds to wait for a response on each interface.\n"
-			"  -u        Specify username on command line.\n"
-			"  -p        Specify password on command line.\n"
-			"  -S        Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
-		    "            Forward SSH connection through MAC-Telnet and launch SSH client.\n"
-			"  -F        Forward connection through of MAC-Telnet without launching the \n"
-		    "            SSH Client.\n"
-			"  -P port   Local TCP port for forwarding SSH connection.\n"
-			"            (If not specified, port 2222 by default.)\n"
-			"  -q        Quiet mode.\n"
-			"  -v        Print version and exit.\n"
-			"  -h        Print help and exit.\n"
+			"  MAC        MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
+            "             discover it.\n"
+			"  identity   The identity/name of your destination device. Uses MNDP protocol \n"
+			"             to find it.\n"
+			"  -l         List/Search for routers nearby. (using MNDP)\n"
+			"  -n         Do not use broadcast packets. Less insecure but requires root \n"
+		    "             privileges.\n"
+			"  -t         Amount of seconds to wait for a response on each interface.\n"
+			"  -u         Specify username on command line.\n"
+			"  -p         Specify password on command line.\n"
+			"  -S         Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
+		    "             Forward SSH connection through MAC-Telnet and launch SSH client.\n"
+			"  -F         Forward connection through of MAC-Telnet without launching the \n"
+		    "             SSH Client.\n"
+			"  -P <port>  Local TCP port for forwarding SSH connection.\n"
+			"             (If not specified, port 2222 by default.)\n"
+			"  -c <path>  Path for ssh client executable. (Default: /usr/bin/ssh)\n"
+			"  -q         Quiet mode.\n"
+			"  -v         Print version and exit.\n"
+			"  -h         Print help and exit.\n"
 			"\n"));
 		}
 		return 1;
@@ -673,11 +688,13 @@ int main (int argc, char **argv) {
 			/* Execute SSH Client. */
 			char portstr[8];
 			snprintf(portstr, 8, "%d", fwdport);
+			char *ssh_path_c = strndup(ssh_path, sizeof(ssh_path) - 1);
+			char *ssh_filename = basename(ssh_path_c);
 			if (have_username) {
-				execlp("ssh", "ssh", "-p", portstr, "-l", username, "127.0.0.1", (char *) 0);
+				execlp(ssh_path, ssh_filename, "-p", portstr, "-l", username, "127.0.0.1", (char *) 0);
 			}
 			else {
-				execlp("ssh", "ssh", "-p", portstr, "127.0.0.1", (char *) 0);
+				execlp(ssh_path, ssh_filename, "-p", portstr, "127.0.0.1", (char *) 0);
 			}
 			perror("Execution of terminal client failed.");
 			exit(1);
