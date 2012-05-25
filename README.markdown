@@ -55,9 +55,6 @@ servers and might serve as a rescue system, when the IP configuration of any
 server gets messed up for any reason.
 
 
-
-
-
 Installation
 ------------
 
