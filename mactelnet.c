@@ -433,7 +433,7 @@ int main (int argc, char **argv) {
 	textdomain("mactelnet");
 
 	while (1) {
-		c = getopt(argc, argv, "nqt:u:p:vh?sFP:");
+		c = getopt(argc, argv, "nqt:u:p:vh?SFP:");
 
 		if (c == -1) {
 			break;
@@ -445,7 +445,7 @@ int main (int argc, char **argv) {
 				use_raw_socket = 1;
 				break;
 
-			case 's':
+			case 'S':
 				tunnel_conn = 1;
 				launch_ssh = 1;
 				break;
@@ -506,7 +506,7 @@ int main (int argc, char **argv) {
 			"  -t        Amount of seconds to wait for a response on each interface.\n"
 			"  -u        Specify username on command line.\n"
 			"  -p        Specify password on command line.\n"
-			"  -s        Use MAC-SSH instead of MAC-Telnet. (Implies -f)\n"
+			"  -S        Use MAC-SSH instead of MAC-Telnet. (Implies -f)\n"
 		    "            Tunnels connection through MAC-Telnet and launches SSH client."
 			"  -F        Tunnel connection through of MAC-Telnet without launching SSH Client.\n"
 			"  -P port   Local TCP port for forwarding SSH connection.\n"
