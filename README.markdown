@@ -7,9 +7,9 @@ the original work of
 The original version implements the following:
 
 * A linux console tool for connecting to _MikroTik RouterOS_ devices via their
-ethernet address.
+  ethernet address.
 * Linux daemon that implements the _MAC Telnet_ Daemon to permit connecting
-to Linux machines via their ethernet address.
+  to Linux machines via their ethernet address.
 
 Forked to implement additional functionality for tunneling any TCP connection 
 trough the through the _MAC Telnet_ protocol. The main use case is connecting to 
@@ -18,41 +18,43 @@ Linux machines via their ethernet address using _SSH_ protocol for security.
 The server supports two modes of operation:
 * Standard MAC-Telnet Server Mode
 * TCP Connection Forwarding Mode: Tunnels a TCP connection to a local port on 
-the client to a specific local port on the server side through MAC-Telnet 
-protocol. This mode of operation is used for forwarding SSH connections through 
-the MAC-Telnet protocol.
+  the client to a specific local port on the server side through MAC-Telnet 
+  protocol. This mode of operation is used for forwarding SSH connections 
+  through the MAC-Telnet protocol.
 
 The client supports three modes of operation:
 * Standard MAC-Telnet Client Mode
 * TCP Connection Forwarding Mode: Tunnels a specific local port on the client to 
-the serverthrough MAC-Telnet protocol.
+  the serverthrough MAC-Telnet protocol.
 * SSH Forwarding Mode: The client takes care of setting up the tunnel and 
-launching the SSH client. 
+  launching the SSH client. 
 
 The _MAC-Telnet_ and _Forwarding_ modes of operation are _not_ compatible. Both 
 the client and the server must operate in the same mode for successful 
-communications. 
-
-The _SSH Forwarding Mode_ has the following advantages in comparison to standard
+communications. The _SSH Forwarding Mode_ has the following advantages in comparison to standard
 _MAC-Telnet_:
 
 * The_mactelnet.users_ configuration file is not needed. Instead of maintaining 
-another set of user passwords for _MAC-Telnet_, the standard authentication 
-mechanisms supported by ssh are used.
+  another set of user passwords for _MAC-Telnet_, the standard authentication 
+  mechanisms supported by ssh are used.
 * Public key authentication works seamlessly permiting logins without password.
 * The communication between client and server is encrypyted by _SSH_.
+* The daemon does not require root privileges and can be run by a non-privileged 
+  user for additional security.
+* The daemon relies on the security model of _SSH_, instead of creating a shell
+  environment itself.
 
 
 Some use cases are as follows:
 
 * In embedded systems it can be used for initial provisioning and for 
-maintenance purposes in situations where a valid IP configuration is not 
-available. Might be a useful addition to the rescue mode especially of embedded
-systems without screens; connecting  using MAC-Telnet / MAC-SSH is much more 
-convenient then fetching and connecting a serial cable.
+  maintenance purposes in situations where a valid IP configuration is not 
+  available. Might be a useful addition to the rescue mode especially of embedded
+  systems without screens; connecting  using MAC-Telnet / MAC-SSH is much more 
+  convenient then fetching and connecting a serial cable.
 * In datacentres it can be used for initial provisioning of physical and virtual
-servers and might serve as a rescue system, when the IP configuration of any 
-server gets messed up for any reason.
+  servers and might serve as a rescue system, when the IP configuration of any 
+  server gets messed up for any reason.
 
 
 Installation
