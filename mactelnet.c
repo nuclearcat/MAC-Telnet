@@ -444,7 +444,7 @@ int main (int argc, char **argv) {
 	textdomain("mactelnet");
 
 	while (1) {
-		c = getopt(argc, argv, "lnqt:u:p:vh?SFP:");
+		c = getopt(argc, argv, "nqlt:u:p:vh?SFP:");
 
 		if (c == -1) {
 			break;
@@ -487,6 +487,10 @@ int main (int argc, char **argv) {
 				connect_timeout = atoi(optarg);
 				break;
 
+			case 'l':
+				return mndp();
+				break;
+
 			case 'v':
 				print_version();
 				exit(0);
@@ -494,10 +498,6 @@ int main (int argc, char **argv) {
 
 			case 'q':
 				quiet_mode = 1;
-				break;
-
-			case 'l':
-				return mndp();
 				break;
 
 			case 'h':
@@ -509,17 +509,16 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-S] [-P port] [-n] [-t <timeout>] \n"
-				          "       [-u <username>] [-p <password>]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-l] [-S] [-P port] [-n]\n"
+				          "       [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
-			"  -v        Print version and exit.\n"
-			"  -h        Print help and exit.\n"
 			"  MAC       MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
             "            discover it.\n"
 			"  identity  The identity/name of your destination device. Uses MNDP protocol \n"
 			"            to find it.\n"
+			"  -l        List/Search for routers nearby. (using MNDP)\n"
 			"  -n        Do not use broadcast packets. Less insecure but requires root \n"
 		    "            privileges.\n"
 			"  -t        Amount of seconds to wait for a response on each interface.\n"
@@ -532,6 +531,8 @@ int main (int argc, char **argv) {
 			"  -P port   Local TCP port for forwarding SSH connection.\n"
 			"            (If not specified, port 2222 by default.)\n"
 			"  -q        Quiet mode.\n"
+			"  -v        Print version and exit.\n"
+			"  -h        Print help and exit.\n"
 			"\n"));
 		}
 		return 1;
