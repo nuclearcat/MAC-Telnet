@@ -994,6 +994,10 @@ int main (int argc, char **argv) {
 				tunnel_conn = 1;
 				break;
 
+			case 'F':
+				tunnel_conn = 1;
+				break;
+
 			case 'P':
 				fwdport = atoi(optarg);
 				break;
@@ -1019,7 +1023,8 @@ int main (int argc, char **argv) {
 				"  -h        Print help and exit.\n"
 				"  -f        Run process in foreground.\n"
 				"  -n        Do not use broadcast packets. Just a tad less insecure.\n"
-				"  -S        Use MAC-SSH instead of MAC-Telnet.\n"
+				"  -S / -F   Tunneling of TCP connections through  MAC-Telnet protocol,\n"
+				"            instead of standard MAC-Telnet use.\n"
 				"  -P        Local TCP port for SSH Daemon.\n"
 				"            (If not specified, port 22 by default.)\n"
 				"\n"));
