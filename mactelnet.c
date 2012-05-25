@@ -84,6 +84,7 @@ static int keepalive_counter = 0;
 static unsigned char encryptionkey[128];
 static char username[255];
 static char password[255];
+static int sent_auth = 0;
 
 struct net_interface interfaces[MAX_INTERFACES];
 struct net_interface *active_interface;
@@ -205,6 +206,7 @@ static void send_auth(char *username, char *password) {
 
 	/* TODO: handle result */
 	send_udp(&data, 1);
+	sent_auth = 1;
 }
 
 static void sig_winch(int sig) {
@@ -262,27 +264,27 @@ static int handle_packet(unsigned char *data, int data_len) {
 		while (success) {
 
 			/* If we receive encryptionkey, transmit auth data back */
-			if (cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY && !tunnel_conn) {
+			if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY) {
 				memcpy(encryptionkey, cpkt.data, cpkt.length);
 				send_auth(username, password);
 			}
 			/* Using MAC-SSH server must not send authentication request.
 			 * Authentication is handled by tunneled SSH Client and Server.
 			 */
-			else if (cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY && tunnel_conn) {
-				fprintf(stderr, _("Server %s does not seem to use MAC-SSH Protocol. Try MAC-Telnet instead.\n"), ether_ntoa((struct ether_addr *)dstmac));
+			else if (tunnel_conn && cpkt.cptype == MT_CPTYPE_ENCRYPTIONKEY) {
+				fprintf(stderr, _("Server %s does not seem to use MAC-SSH Protocol. Please Try using MAC-Telnet instead.\n"), ether_ntoa((struct ether_addr *)dstmac));
 				exit(1);
 			}
 
 			/* If the (remaining) data did not have a control-packet magic byte sequence,
 			   the data is raw terminal data to be outputted to the terminal. */
-			else if (cpkt.cptype == MT_CPTYPE_PLAINDATA && !tunnel_conn) {
+			else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_PLAINDATA) {
 				cpkt.data[cpkt.length] = 0;
 				printf("%s", cpkt.data);
 			}
 			/* If the (remaining) data did not have a control-packet magic byte sequence,
 			   the data is raw terminal data to be tunneled to local SSH Client. */
-			else if (cpkt.cptype == MT_CPTYPE_PLAINDATA && tunnel_conn) {
+			else if (tunnel_conn && cpkt.cptype == MT_CPTYPE_PLAINDATA) {
 				if (send(fwdfd, cpkt.data, cpkt.length, 0) < 0) {
 					fprintf(stderr, "Terminal client disconnected.\n");
 					/* exit */
@@ -292,7 +294,12 @@ static int handle_packet(unsigned char *data, int data_len) {
 
 			/* END_AUTH means that the user/password negotiation is done, and after this point
 			   terminal data may arrive, so we set up the terminal to raw mode. */
-			else if (cpkt.cptype == MT_CPTYPE_END_AUTH && !tunnel_conn) {
+			else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_END_AUTH) {
+
+				if (!sent_auth) {
+					fprintf(stderr, _("Server %s does not seem to use MAC-Telnet Protocol. Please Try using MAC-SSH instead.\n"), ether_ntoa((struct ether_addr *)dstmac));
+					exit(1);
+				}
 
 				/* we have entered "terminal mode" */
 				terminal_mode = 1;
@@ -306,6 +313,9 @@ static int handle_packet(unsigned char *data, int data_len) {
 					/* Add resize signal handler */
 					signal(SIGWINCH, sig_winch);
 				}
+			}
+			else if (tunnel_conn && cpkt.cptype == MT_CPTYPE_END_AUTH) {
+
 			}
 
 			/* Parse next controlpacket */
@@ -557,14 +567,14 @@ int main (int argc, char **argv) {
 		return 1;
 	}
 
-	if (!have_username && !tunnel_conn) {
+	if (!tunnel_conn && !have_username) {
 		if (!quiet_mode) {
 			printf(_("Login: "));
 		}
 		scanf("%254s", username);
 	}
 
-	if (!have_password && !tunnel_conn) {
+	if (!tunnel_conn && !have_password) {
 		char *tmp;
 		tmp = getpass(quiet_mode ? "" : _("Password: "));
 		strncpy(password, tmp, sizeof(password) - 1);
@@ -728,7 +738,7 @@ int main (int argc, char **argv) {
 
 		/* Init select */
 		FD_ZERO(&read_fds);
-		if (!terminal_gone && !tunnel_conn) {
+		if (!tunnel_conn && !terminal_gone) {
 			/* Setup fd to read input from terminal. */
 			FD_SET(0, &read_fds);
 		}

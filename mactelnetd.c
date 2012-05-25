@@ -620,36 +620,44 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 		else if (tunnel_conn && cpkt.cptype == MT_CPTYPE_BEGINAUTH) {
 			got_auth_packet = 1;
 
-		} else if (cpkt.cptype == MT_CPTYPE_USERNAME) {
+		} else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_USERNAME) {
 
 			memcpy(curconn->username, cpkt.data, cpkt.length > 29 ? 29 : cpkt.length);
 			curconn->username[cpkt.length > 29 ? 29 : cpkt.length] = 0;
 			got_user_packet = 1;
 
-		} else if (cpkt.cptype == MT_CPTYPE_TERM_WIDTH) {
+		} else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_TERM_WIDTH) {
 			unsigned short width;
 			
 			memcpy(&width, cpkt.data, 2);
 			curconn->terminal_width = le16toh(width);
 			got_width_packet = 1;
 
-		} else if (cpkt.cptype == MT_CPTYPE_TERM_HEIGHT) {
+		} else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_TERM_HEIGHT) {
 			unsigned short height;
 
 			memcpy(&height, cpkt.data, 2);
 			curconn->terminal_height = le16toh(height);
 			got_height_packet = 1;
 
-		} else if (cpkt.cptype == MT_CPTYPE_TERM_TYPE) {
+		} else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_TERM_TYPE) {
 
 			memcpy(curconn->terminal_type, cpkt.data, cpkt.length > 29 ? 29 : cpkt.length);
 			curconn->terminal_type[cpkt.length > 29 ? 29 : cpkt.length] = 0;
 
-		} else if (cpkt.cptype == MT_CPTYPE_PASSWORD) {
+		} else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_PASSWORD) {
 
 			memcpy(curconn->trypassword, cpkt.data, 17);
 			got_pass_packet = 1;
-
+		} else if (tunnel_conn &&
+				(cpkt.cptype == MT_CPTYPE_USERNAME
+				 || cpkt.cptype == MT_CPTYPE_PASSWORD
+				 || cpkt.cptype == MT_CPTYPE_TERM_TYPE
+				 || cpkt.cptype == MT_CPTYPE_TERM_WIDTH
+				 || cpkt.cptype == MT_CPTYPE_TERM_HEIGHT)) {
+			syslog(LOG_INFO, "(%d) Connection from tunnel to server port closed.", curconn->seskey);
+			abort_connection(curconn, pkthdr, _("The server does not support standard MAC-Telnet Protocol. Please try using MAC-SSH instead.\r\n"));
+			return;
 		} else if (cpkt.cptype == MT_CPTYPE_PLAINDATA) {
 
 			/* relay data from client to shell */
