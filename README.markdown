@@ -58,12 +58,17 @@ server gets messed up for any reason.
 Installation
 ------------
 
-Clone repository.
+Unless you need the extra SSH forwarding funcionality implemented by this fork,
+using the upstream version of the code from 
+[MAC-Telnet](https://github.com/haakonnessjoen/MAC-Telnet) 
+by 
+[haakonnessjoen](https://github.com/haakonnessjoen) (_Håkon Nessjøen_)
+is highly recommended.
 
-Then:
-    make all install
+To use this version:
 
-Now you're ready.
+* Clone the repository.
+* make all install
 
 
 Usage
@@ -132,3 +137,12 @@ Usage: ./mactelnetd [-v] [-h] [-S] [-P port] [-n] [-f]
 ### mndp ###
 
 $ mndp
+
+
+Licensing
+---------
+
+_PyMunin_ is copyrighted free software made available under the terms of the 
+_GPL License Version 3_ or later.
+
+See the _LICENSE_ file that acompanies the code for full licensing information.
