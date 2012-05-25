@@ -33,6 +33,9 @@
 #define MT_MNDP_TIMEOUT 5
 #define MT_MNDP_LONGTIMEOUT 120
 
+#define MT_SOFTID_MACTELNET "MAC-Telnet"
+#define MT_SOFTID_MACSSH "MAC-SSH"
+
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
 #endif

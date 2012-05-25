@@ -2,6 +2,10 @@
     Mac-Telnet - Connect to RouterOS or mactelnetd devices via MAC address
     Copyright (C) 2010, Håkon Nessjøen <haakon.nessjoen@gmail.com>
 
+	Shameless hack by Ali Onur Uyar to add support for SSH Tunneling through
+    MAC-Telnet protocol.
+    Copyright (C) 2011, Ali Onur Uyar <aouyar@gmail.com>
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -77,7 +81,7 @@ static int pings = 0;
 struct net_interface interfaces[MAX_INTERFACES];
 
 static int use_raw_socket = 0;
-static int use_ssh = 0;
+static int tunnel_conn = 0;
 
 static struct in_addr sourceip; 
 static struct in_addr destip;
@@ -805,6 +809,11 @@ void mndp_broadcast() {
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_PLATFORM, PLATFORM_NAME, strlen(PLATFORM_NAME));
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_HARDWARE, s_uname.machine, strlen(s_uname.machine));
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_TIMESTAMP, &uptime, 4);
+		if (!tunnel_conn) {
+			mndp_add_attribute(&pdata, MT_MNDPTYPE_SOFTID, MT_SOFTID_MACTELNET, strlen(MT_SOFTID_MACTELNET));
+		} else {
+			mndp_add_attribute(&pdata, MT_MNDPTYPE_SOFTID, MT_SOFTID_MACSSH, strlen(MT_SOFTID_MACSSH));
+		}
 
 		header->cksum = in_cksum((unsigned short *)&(pdata.data), pdata.size);
 		send_special_udp(interface, MT_MNDP_PORT, &pdata);
@@ -901,7 +910,7 @@ int main (int argc, char **argv) {
 	bindtextdomain("mactelnet","/usr/share/locale");
 	textdomain("mactelnet");
 
-	while ((c = getopt(argc, argv, "fnvh?sP:")) != -1) {
+	while ((c = getopt(argc, argv, "fnvh?SP:")) != -1) {
 		switch (c) {
 			case 'f':
 				foreground = 1;
@@ -911,8 +920,8 @@ int main (int argc, char **argv) {
 				use_raw_socket = 1;
 				break;
 
-			case 's':
-				use_ssh = 1;
+			case 'S':
+				tunnel_conn = 1;
 				break;
 
 			case 'P':
@@ -934,13 +943,13 @@ int main (int argc, char **argv) {
 
 	if (print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s [-v] [-h] [-s] [-P port] [-n] [-f]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s [-v] [-h] [-S] [-P port] [-n] [-f]\n"), argv[0]);
 		fprintf(stderr, _("\nParameters:\n"
 				"  -v        Print version and exit.\n"
 				"  -h        Print help and exit.\n"
 				"  -f        Run process in foreground.\n"
 				"  -n        Do not use broadcast packets. Just a tad less insecure.\n"
-				"  -s        Use MAC-SSH instead of MAC-Telnet.\n"
+				"  -S        Use MAC-SSH instead of MAC-Telnet.\n"
 				"  -P        Local TCP port for SSH Daemon.\n"
 				"            (If not specified, port 22 by default.)\n"
 				"\n"));
