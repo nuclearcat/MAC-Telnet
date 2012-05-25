@@ -494,7 +494,7 @@ int main (int argc, char **argv) {
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-s] [-P port] [-n] [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-S] [-P port] [-n] [-t <timeout>] [-u <username>] [-p <password>]\n"), argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
