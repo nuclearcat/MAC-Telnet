@@ -47,6 +47,7 @@
 #include "interfaces.h"
 #include "config.h"
 #include "mactelnet.h"
+#include "mndp.h"
 
 #define PROGRAM_NAME "MAC-Telnet"
 
@@ -443,7 +444,7 @@ int main (int argc, char **argv) {
 	textdomain("mactelnet");
 
 	while (1) {
-		c = getopt(argc, argv, "nqt:u:p:vh?SFP:");
+		c = getopt(argc, argv, "lnqt:u:p:vh?SFP:");
 
 		if (c == -1) {
 			break;
@@ -493,6 +494,10 @@ int main (int argc, char **argv) {
 
 			case 'q':
 				quiet_mode = 1;
+				break;
+
+			case 'l':
+				return mndp();
 				break;
 
 			case 'h':
