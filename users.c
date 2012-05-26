@@ -16,11 +16,18 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+#include <libintl.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pwd.h>
 #include "users.h"
 #include "config.h"
+
+#define _(String) gettext (String)
 
 
 struct mt_credentials mt_users[MT_CRED_MAXNUM];
@@ -70,4 +77,29 @@ struct mt_credentials* find_user(char *username) {
 		i++;
 	}
 	return NULL;
+}
+
+
+void drop_privileges(char *username) {
+	struct passwd *user = (struct passwd *) getpwnam(username);
+	if (user == NULL) {
+		fprintf(stderr, _("Failed dropping privileges. The user %s is not a valid username on local system."), username);
+		exit(1);
+	}
+	if (getuid() == 0) {
+		/* process is running as root, drop privileges */
+		if (setgid(user->pw_gid) != 0) {
+			perror("setgid: Error dropping group privileges");
+		    exit(1);
+		}
+		if (setuid(user->pw_uid) != 0) {
+			perror("setuid: Error dropping user privileges");
+		    exit(1);
+		}
+		/* Verify if the privileges were developed. */
+		if (setuid(0) != -1) {
+			perror("Failed to drop privileges");
+			exit(1);
+		}
+	}
 }

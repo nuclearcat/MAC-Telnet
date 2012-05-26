@@ -82,6 +82,7 @@ struct net_interface interfaces[MAX_INTERFACES];
 
 static int use_raw_socket = 0;
 static int tunnel_conn = 0;
+static char nonpriv_username[255];
 
 static struct in_addr sourceip; 
 static struct in_addr destip;
@@ -975,12 +976,13 @@ int main (int argc, char **argv) {
 	int print_help = 0;
 	int foreground = 0;
 	int interface_count = 0;
+	unsigned char drop_priv = 0;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain("mactelnet","/usr/share/locale");
 	textdomain("mactelnet");
 
-	while ((c = getopt(argc, argv, "fnvh?SP:")) != -1) {
+	while ((c = getopt(argc, argv, "fnvh?SP:U:")) != -1) {
 		switch (c) {
 			case 'f':
 				foreground = 1;
@@ -1002,6 +1004,13 @@ int main (int argc, char **argv) {
 				fwdport = atoi(optarg);
 				break;
 
+			case 'U':
+				/* Save nonpriv_username */
+				strncpy(nonpriv_username, optarg, sizeof(nonpriv_username) - 1);
+				nonpriv_username[sizeof(nonpriv_username) - 1] = '\0';
+				drop_priv = 1;
+				break;
+
 			case 'v':
 				print_version();
 				exit(0);
@@ -1017,14 +1026,17 @@ int main (int argc, char **argv) {
 
 	if (print_help) {
 		print_version();
-		fprintf(stderr, _("Usage: %s [-v] [-h] [-S] [-P <port>] [-n] [-f]\n"), argv[0]);
+		fprintf(stderr, _("Usage: %s [-v] [-h] [-n] [-f] [-S] [-P <port>] [-U <user>]\n"), argv[0]);
 		fprintf(stderr, _("\nParameters:\n"
 				"  -f         Run process in foreground.\n"
 				"  -n         Do not use broadcast packets. Just a tad less insecure.\n"
 				"  -S / -F    Tunneling of TCP connections through  MAC-Telnet protocol,\n"
 				"             instead of standard MAC-Telnet use.\n"
-				"  -P <port>  Local TCP port for SSH Daemon.\n"
+				"  -P <port>  Local TCP port for SSH Server.\n"
 				"             (If not specified, port 22 by default.)\n"
+				"  -U <user>  Drop privileges by switching to user, when the command is\n"
+				"             run as a privileged user in conjunction with -n option.\n"
+				"             Standard MAC-Telnet is not compatible with this option.\n"
 				"  -v         Print version and exit.\n"
 				"  -h         Print help and exit.\n"
 				"\n"));
@@ -1047,6 +1059,16 @@ int main (int argc, char **argv) {
 	if (use_raw_socket) {
 		/* Transmit raw packets with this socket */
 		sockfd = net_init_raw_socket();
+	}
+
+	if (drop_priv) {
+		if (tunnel_conn) {
+			drop_privileges(nonpriv_username);
+		}
+		else {
+			fprintf(stderr, _("Drop privileges (-U) option ignored. "
+					          "Standard MAC-Telnet is not compatible with this option.\n"));
+		}
 	}
 
 	/* Receive regular udp packets with this socket */

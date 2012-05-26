@@ -32,4 +32,6 @@ extern struct mt_credentials mt_users[MT_CRED_MAXNUM];
 extern void read_userfile();
 struct mt_credentials* find_user(char *username);
 
+extern void drop_privileges();
+
 #endif

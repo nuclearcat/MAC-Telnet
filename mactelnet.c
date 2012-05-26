@@ -41,14 +41,16 @@
 #ifdef __LINUX__
 #include <linux/if_ether.h>
 #endif
+#include <libgen.h>
 #include "md5.h"
 #include "protocol.h"
 #include "console.h"
 #include "interfaces.h"
+#include "users.h"
 #include "config.h"
 #include "mactelnet.h"
 #include "mndp.h"
-#include "libgen.h"
+
 
 #define PROGRAM_NAME "MAC-Telnet"
 
@@ -86,6 +88,7 @@ static int keepalive_counter = 0;
 static unsigned char encryptionkey[128];
 static char username[255];
 static char password[255];
+static char nonpriv_username[255];
 static int sent_auth = 0;
 
 struct net_interface interfaces[MAX_INTERFACES];
@@ -295,7 +298,7 @@ static int handle_packet(unsigned char *data, int data_len) {
 			   the data is raw terminal data to be tunneled to local SSH Client. */
 			else if (tunnel_conn && cpkt.cptype == MT_CPTYPE_PLAINDATA) {
 				if (send(fwdfd, cpkt.data, cpkt.length, 0) < 0) {
-					fprintf(stderr, "Terminal client disconnected.\n");
+					fprintf(stderr, _("Terminal client disconnected.\n"));
 					/* exit */
 					running = 0;
 				}
@@ -444,6 +447,7 @@ int main (int argc, char **argv) {
 	struct sockaddr_in si_me;
 	unsigned char buff[1500];
 	unsigned char print_help = 0, have_username = 0, have_password = 0;
+	unsigned char drop_priv = 0;
 	int c;
 	int optval = 1;
 
@@ -466,7 +470,7 @@ int main (int argc, char **argv) {
 	}
 
 	while (1) {
-		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:");
+		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:U:");
 
 		if (c == -1) {
 			break;
@@ -505,6 +509,13 @@ int main (int argc, char **argv) {
 				have_password = 1;
 				break;
 
+			case 'U':
+				/* Save nonpriv_username */
+				strncpy(nonpriv_username, optarg, sizeof(nonpriv_username) - 1);
+				nonpriv_username[sizeof(nonpriv_username) - 1] = '\0';
+				drop_priv = 1;
+				break;
+
 			case 'c':
 				/* Save ssh executable path */
 				strncpy(ssh_path, optarg, sizeof(ssh_path) -1);
@@ -538,30 +549,32 @@ int main (int argc, char **argv) {
 	if (argc - optind < 1 || print_help) {
 		print_version();
 		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-S] [-P <port>]\n"
-				          "       [-t <timeout>] [-u <username>] [-p <password>] [-c <path>]\n"), argv[0]);
+				          "       [-t <timeout>] [-u <user>] [-p <pass>] [-c <path>] [-U <user>]\n"), argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
-			"  MAC        MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
-            "             discover it.\n"
-			"  identity   The identity/name of your destination device. Uses MNDP protocol \n"
-			"             to find it.\n"
-			"  -l         List/Search for routers nearby. (using MNDP)\n"
-			"  -n         Do not use broadcast packets. Less insecure but requires root \n"
-		    "             privileges.\n"
-			"  -t         Amount of seconds to wait for a response on each interface.\n"
-			"  -u         Specify username on command line.\n"
-			"  -p         Specify password on command line.\n"
-			"  -S         Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
-		    "             Forward SSH connection through MAC-Telnet and launch SSH client.\n"
-			"  -F         Forward connection through of MAC-Telnet without launching the \n"
-		    "             SSH Client.\n"
-			"  -P <port>  Local TCP port for forwarding SSH connection.\n"
-			"             (If not specified, port 2222 by default.)\n"
-			"  -c <path>  Path for ssh client executable. (Default: /usr/bin/ssh)\n"
-			"  -q         Quiet mode.\n"
-			"  -v         Print version and exit.\n"
-			"  -h         Print help and exit.\n"
+			"  MAC           MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
+            "                discover it.\n"
+			"  identity      The identity/name of your destination device. Uses MNDP \n"
+			"                protocol to find it.\n"
+			"  -l            List/Search for routers nearby. (using MNDP)\n"
+			"  -n            Do not use broadcast packets. Less insecure but requires root \n"
+		    "                privileges.\n"
+			"  -t <timeout>  Amount of seconds to wait for a response on each interface.\n"
+			"  -u <user>     Specify username on command line.\n"
+			"  -p <pass>     Specify password on command line.\n"
+			"  -U <user>     Drop privileges by switching to user, when the command is\n"
+			"                run as a privileged user in conjunction with -n option.\n"
+			"  -S            Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
+		    "                Forward SSH connection through MAC-Telnet and launch SSH client.\n"
+			"  -F            Forward connection through of MAC-Telnet without launching the \n"
+		    "                SSH Client.\n"
+			"  -P <port>     Local TCP port for forwarding SSH connection.\n"
+			"                (If not specified, port 2222 by default.)\n"
+			"  -c <path>     Path for ssh client executable. (Default: /usr/bin/ssh)\n"
+			"  -q            Quiet mode.\n"
+			"  -v            Print version and exit.\n"
+			"  -h            Print help and exit.\n"
 			"\n"
 			"All arguments after '--' will be passed to the ssh client command.\n"
 			"\n"));
@@ -615,6 +628,10 @@ int main (int argc, char **argv) {
 		}
 
 		sockfd = net_init_raw_socket();
+	}
+
+	if (drop_priv) {
+		drop_privileges(nonpriv_username);
 	}
 
 	/* Receive regular udp packets with this socket */
