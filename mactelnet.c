@@ -99,6 +99,10 @@ static unsigned int send_socket;
 /* SSH Executable Path */
 static char ssh_path[512];
 
+/* SSH additional args. */
+static char **ssh_argv;
+
+
 static int handle_packet(unsigned char *data, int data_len);
 
 static void print_version() {
@@ -451,8 +455,18 @@ int main (int argc, char **argv) {
 	strncpy(ssh_path, SSH_PATH, sizeof(ssh_path) -1);
 	ssh_path[sizeof(ssh_path)] = '\0';
 
+    /* Ignore args after -- for MAC-Telnet client. */
+	int mactelnet_argc = argc;
+	int i;
+	for (i=0; i < argc; i++) {
+		if (strlen(argv[i]) == 2 && strncmp(argv[i], "--", 2) == 0) {
+			mactelnet_argc = i;
+			break;
+		}
+	}
+
 	while (1) {
-		c = getopt(argc, argv, "nqlt:u:p:vh?SFP:c:");
+		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:");
 
 		if (c == -1) {
 			break;
@@ -548,9 +562,42 @@ int main (int argc, char **argv) {
 			"  -q         Quiet mode.\n"
 			"  -v         Print version and exit.\n"
 			"  -h         Print help and exit.\n"
+			"\n"
+			"All arguments after '--' will be passed to the ssh client command.\n"
 			"\n"));
 		}
 		return 1;
+	}
+
+	/* Setup command line for ssh client */
+	if (launch_ssh) {
+		int ssh_argc;
+		int add_argc;
+		ssh_argc = argc - mactelnet_argc;
+		add_argc = ssh_argc;
+		ssh_argc += 3; /* Port option and hostname: -p <port> <host>*/
+		if (have_username) {
+			ssh_argc += 2;  /* Login name option: -l <user> */
+		}
+		ssh_argv = (char **) calloc(sizeof(char *), ssh_argc + 1);
+		char *ssh_path_c = strndup(ssh_path, sizeof(ssh_path) - 1);
+		char *ssh_filename = basename(ssh_path_c);
+		int idx = 0;
+		ssh_argv[idx++] = ssh_filename;
+		int i;
+		for (i = 1; i < add_argc; i++) {
+			ssh_argv[idx++] = argv[mactelnet_argc + i];
+		}
+		char portstr[8];
+		snprintf(portstr, 8, "%d", fwdport);
+		ssh_argv[idx++] = strdup("-p");
+		ssh_argv[idx++] = strndup(portstr, sizeof(portstr) - 1);
+		if (have_username) {
+			ssh_argv[idx++] = strdup("-l");
+			ssh_argv[idx++] = username;
+		}
+		ssh_argv[idx++] = strdup("127.0.0.1");
+		ssh_argv[idx++] = (char*) 0;
 	}
 
 	is_a_tty = isatty(fileno(stdout)) && isatty(fileno(stdin));
@@ -686,16 +733,7 @@ int main (int argc, char **argv) {
 			sleep(2);
 
 			/* Execute SSH Client. */
-			char portstr[8];
-			snprintf(portstr, 8, "%d", fwdport);
-			char *ssh_path_c = strndup(ssh_path, sizeof(ssh_path) - 1);
-			char *ssh_filename = basename(ssh_path_c);
-			if (have_username) {
-				execlp(ssh_path, ssh_filename, "-p", portstr, "-l", username, "127.0.0.1", (char *) 0);
-			}
-			else {
-				execlp(ssh_path, ssh_filename, "-p", portstr, "127.0.0.1", (char *) 0);
-			}
+			execvp(ssh_path, ssh_argv);
 			perror("Execution of terminal client failed.");
 			exit(1);
 		}

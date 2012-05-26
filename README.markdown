@@ -109,6 +109,8 @@ Usage
 	  -q         Quiet mode.
 	  -v         Print version and exit.
 	  -h         Print help and exit.
+	  
+	All arguments after '--' will be passed to the ssh client command.
 
 
 ### mactelnetd ###
