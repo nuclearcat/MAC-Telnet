@@ -564,7 +564,7 @@ int main (int argc, char **argv) {
 			"  -u <user>     Specify username on command line.\n"
 			"  -p <pass>     Specify password on command line.\n"
 			"  -U <user>     Drop privileges by switching to user, when the command is\n"
-			"                run as a privileged user in conjunction with -n option.\n"
+			"                run as a privileged user in conjunction with the -n option.\n"
 			"  -S            Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
 		    "                Forward SSH connection through MAC-Telnet and launch SSH client.\n"
 			"  -F            Forward connection through of MAC-Telnet without launching the \n"

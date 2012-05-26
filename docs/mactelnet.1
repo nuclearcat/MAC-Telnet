@@ -1,6 +1,6 @@
 .TH MACTELNET 1 "February 27, 2011"
 .SH NAME
-mactelnet \- A tool for telneting via MAC addresses
+mactelnet \- Tool for remote Telnet or SSH connections to MAC-address
 .SH SYNOPSIS
 .B mactelnet
 .RI [ options ] " " < MAC-Address | hostname >
@@ -8,6 +8,14 @@ mactelnet \- A tool for telneting via MAC addresses
 This tool enables you to telnet other RouterOS or MAC-Telnetd enabled
 devices. You can connect to either a hostname or a MAC address.
 If specified, the hostname (identity) will be looked up via MNDP discovery.
+.PP
+The client supports three modes of operation:
+.IP \[bu]
+Standard MAC-Telnet Client Mode
+.IP \[bu]
+TCP Connection Forwarding Mode: Tunnels a specific local port on the client to the serverthrough MAC-Telnet protocol. (-F option)
+.IP \[bu]
+SSH Forwarding Mode: Apart from setting up the tunnel, the client takes care of launching the SSH client. (-S option)
 .SH OPTIONS
 These programs follow the usual GNU command line syntax.
 A summary of options is included below.
@@ -24,14 +32,32 @@ Do not use broadcast packets. A tad less insecure but requires root privileges.
 This means that ethernet packets will have the specified mac-address as the packet
 destination, instead of using the ethernet broadcast address.
 .TP
-.B \-t
+.B \-t timeout
 Amount of seconds to wait for a response on each interface. If you have several network interfaces, this is the timeout value per interface.
 .TP
-.B \-u
+.B \-u username
 Specify username. Without this option, you will need to enter the username in a interactive prompt.
 .TP
-.B \-p
+.B \-p password
 Specify password. Without this option, you will need to enter the password in a interactive prompt.
+.TP
+.B \-U username
+Drop privileges by switching to user with username. Can be used when the command is run as a privileged user in conjunction with the -n option.
+.TP
+.B \-S
+Use MAC-SSH instead of MAC-Telnet. Forwards SSH connection through MAC-Telnet and launch SSH client. (Implies -F)
+.TP
+.B \-F
+Forward connection through of MAC-Telnet without launching the SSH Client.
+.TP
+.B \-P port
+Local TCP port for forwarding SSH connection. (If not specified, port 2222 by default.
+.TP
+.B \-c path
+Path for ssh client executable. (Default: /usr/bin/ssh)
+.TP
+.B \-q
+Quiet mode.
 .TP
 .B \-h
 Show summary of options.
@@ -47,3 +73,6 @@ mactelnet was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>.
 .PP
 This manual page was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>,
 for the Debian project (and may be used by others).
+.PP
+The connection forwarding and ssh forwarding functionality was implemented by Ali Onur Uyar <aouyar@gmail.com>.
+

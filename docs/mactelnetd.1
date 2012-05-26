@@ -1,20 +1,42 @@
 .TH MACTELNETD 1 "February 27, 2011"
 .SH NAME
-mactelnetd \- Telnet daemon for MAC-address connections
+mactelnetd \- Telnet / SSH daemon for MAC-address connections
 .SH SYNOPSIS
 .B mactelnetd
 .RI [ options ]
 .SH DESCRIPTION
 This daemon listens for telnet connections from Mikrotik RouterOS devices or mactelnet clients
 on the same physical network. It also announces it's hostname via the MNDP protocol every minute.
+.PP
+The server supports three modes of operation:
+.IP \[bu]
+Standard MAC-Telnet Server Mode
+.IP \[bu]
+TCP Connection Forwarding Mode: Tunnels a TCP connection to a local port on 
+the client to a specific local port on the server side through MAC-Telnet 
+protocol. This mode of operation is used for forwarding SSH connections 
+ through the MAC-Telnet protocol. (-S or -F option)
 .SH OPTIONS
 These programs follow the usual GNU command line syntax.
 A summary of options is included below.
+.TP
+.B \-f
+Run server process in foreground.
 .TP
 .B \-n
 Do not use broadcast packets. A tad less insecure.
 This means that ethernet packets will have the mac-address of the client as the packet
 destination, instead of using the ethernet broadcast address.
+.TP
+.B \-S / -F
+Forwarding of TCP connections through  MAC-Telnet protocol, instead of using the standard MAC-Telnet remote terminal.
+.TP
+.B \-P port
+Local TCP port used for forwarding connections to SSH Server. (If not specified, port 22 by default.)
+.TP
+.B \-U username
+Drop privileges by switching to user with username. Can be used when the command is run as a privileged user in conjunction with the -n option.
+Standard MAC-Telnet is not compatible with this option.
 .TP
 .B \-h
 Show summary of options.
@@ -36,3 +58,5 @@ mactelnetd was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>.
 .PP
 This manual page was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>,
 for the Debian project (and may be used by others).
+.PP
+The connection forwarding and ssh forwarding functionality was implemented by Ali Onur Uyar <aouyar@gmail.com>.
