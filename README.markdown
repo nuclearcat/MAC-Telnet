@@ -39,7 +39,7 @@ _MAC-Telnet_:
   mechanisms supported by ssh are used.
 * Public key authentication works seamlessly permiting logins without password.
 * The communication between client and server is encrypyted by _SSH_.
-* The daemon does not require root privileges and can be run by a non-privileged 
+* As long as the option _-n_ is not used, the daemon does not require root privileges and can be run by a non-privileged 
   user for additional security.
 * The daemon relies on the security model of _SSH_, instead of creating a shell
   environment itself.
@@ -55,6 +55,11 @@ Some use cases are as follows:
 * In datacentres it can be used for initial provisioning of physical and virtual
   servers and might serve as a rescue system, when the IP configuration of any 
   server gets messed up for any reason.
+
+
+For information on other projects you can check 
+my [GitHub Personal Page](http://aouyar.github.com)
+and [GitHub Profile](https://github.com/aouyar).
 
 
 Installation

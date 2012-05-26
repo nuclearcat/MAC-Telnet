@@ -1031,7 +1031,7 @@ int main (int argc, char **argv) {
 		return 1;
 	}
 
-	if (!tunnel_conn && geteuid() != 0) {
+	if ((!tunnel_conn || use_raw_socket) && geteuid() != 0) {
 		fprintf(stderr, _("You need to have root privileges to use %s.\n"), argv[0]);
 		return 1;
 	}
