@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mactelnet\n"
 "Report-Msgid-Bugs-To: haakon.nessjoen@gmail.com\n"
-"POT-Creation-Date: 2012-05-20 17:16+0200\n"
+"POT-Creation-Date: 2012-05-26 00:55-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -62,7 +62,7 @@ msgstr ""
 msgid "Packet size must be between 18 and %d\n"
 msgstr ""
 
-#: macping.c:179 mactelnetd.c:940
+#: macping.c:179 mactelnetd.c:1047
 #, c-format
 msgid "You need to have root privileges to use %s.\n"
 msgstr ""
@@ -92,241 +92,333 @@ msgstr ""
 msgid "%s Reply of %d bytes of unequal data\n"
 msgstr ""
 
-#: mactelnet.c:155
+#: mactelnet.c:176
 #, c-format
 msgid ""
 "\n"
 "Connection timed out\n"
 msgstr ""
 
-#: mactelnet.c:304
+#: mactelnet.c:287
+#, c-format
+msgid ""
+"Server %s does not seem to use MAC-SSH Protocol. Please Try using MAC-Telnet "
+"instead.\n"
+msgstr ""
+
+#: mactelnet.c:301
+#, c-format
+msgid "Terminal client disconnected.\n"
+msgstr ""
+
+#: mactelnet.c:312
+#, c-format
+msgid ""
+"Server %s does not seem to use MAC-Telnet Protocol. Please Try using MAC-SSH "
+"instead.\n"
+msgstr ""
+
+#: mactelnet.c:350
 #, c-format
 msgid "Connection closed.\n"
 msgstr ""
 
-#: mactelnet.c:310
+#: mactelnet.c:356
 #, c-format
 msgid "Unhandeled packet type: %d received from server %s\n"
 msgstr ""
 
-#: mactelnet.c:332
+#: mactelnet.c:378
 #, c-format
 msgid "Error: No suitable devices found\n"
 msgstr ""
 
-#: mactelnet.c:464
+#: mactelnet.c:551
 #, c-format
 msgid ""
-"Usage: %s <MAC|identity> [-h] [-n] [-t <timeout>] [-u <username>] [-p "
-"<password>] | -l\n"
+"Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-S] [-P <port>]\n"
+"       [-t <timeout>] [-u <user>] [-p <pass>] [-c <path>] [-U <user>]\n"
 msgstr ""
 
-#: mactelnet.c:467
+#: mactelnet.c:555
 #, c-format
 msgid ""
 "\n"
 "Parameters:\n"
-"  MAC       MAC-Address of the RouterOS/mactelnetd device. Use mndp to "
-"discover it.\n"
-"  identity  The identity/name of your destination device. Uses MNDP protocol "
-"to find it.\n"
-"  -l        List/Search for routers nearby. (using MNDP)\n"
-"  -n        Do not use broadcast packets. Less insecure but requires root "
-"privileges.\n"
-"  -t        Amount of seconds to wait for a response on each interface.\n"
-"  -u        Specify username on command line.\n"
-"  -p        Specify password on command line.\n"
-"  -q        Quiet mode.\n"
-"  -h        This help.\n"
+"  MAC           MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
+"                discover it.\n"
+"  identity      The identity/name of your destination device. Uses MNDP \n"
+"                protocol to find it.\n"
+"  -l            List/Search for routers nearby. (using MNDP)\n"
+"  -n            Do not use broadcast packets. Less insecure but requires "
+"root \n"
+"                privileges.\n"
+"  -t <timeout>  Amount of seconds to wait for a response on each interface.\n"
+"  -u <user>     Specify username on command line.\n"
+"  -p <pass>     Specify password on command line.\n"
+"  -U <user>     Drop privileges by switching to user, when the command is\n"
+"                run as a privileged user in conjunction with -n option.\n"
+"  -S            Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
+"                Forward SSH connection through MAC-Telnet and launch SSH "
+"client.\n"
+"  -F            Forward connection through of MAC-Telnet without launching "
+"the \n"
+"                SSH Client.\n"
+"  -P <port>     Local TCP port for forwarding SSH connection.\n"
+"                (If not specified, port 2222 by default.)\n"
+"  -c <path>     Path for ssh client executable. (Default: /usr/bin/ssh)\n"
+"  -q            Quiet mode.\n"
+"  -v            Print version and exit.\n"
+"  -h            Print help and exit.\n"
+"\n"
+"All arguments after '--' will be passed to the ssh client command.\n"
 "\n"
 msgstr ""
 
-#: mactelnet.c:492
+#: mactelnet.c:626
 #, c-format
 msgid "You need to have root privileges to use the -n parameter.\n"
 msgstr ""
 
-#: mactelnet.c:524
+#: mactelnet.c:662
 #, c-format
 msgid "Login: "
 msgstr ""
 
-#: mactelnet.c:531
+#: mactelnet.c:669
 msgid "Password: "
 msgstr ""
 
-#: mactelnet.c:556
-#, c-format
-msgid "Connecting to %s..."
-msgstr ""
-
-#: mactelnet.c:566 mactelnetd.c:244 mactelnetd.c:981
+#: mactelnet.c:702 mactelnet.c:792 mactelnetd.c:257 mactelnetd.c:1100
 #, c-format
 msgid "Error binding to %s:%d, %s\n"
 msgstr ""
 
-#: mactelnet.c:571
+#: mactelnet.c:706
+#, c-format
+msgid "Failed listen on server socket %s:%d, %s\n"
+msgstr ""
+
+#: mactelnet.c:727
+#, c-format
+msgid "Waiting for tunnel connection on port: %d\n"
+msgstr ""
+
+#: mactelnet.c:738
+#, c-format
+msgid "Client connected to tunnel from port: %d\n"
+msgstr ""
+
+#: mactelnet.c:759
+#, c-format
+msgid "Execution of terminal client failed.\n"
+msgstr ""
+
+#: mactelnet.c:782
+#, c-format
+msgid "Connecting to %s..."
+msgstr ""
+
+#: mactelnet.c:797
 #, c-format
 msgid "Connection failed.\n"
 msgstr ""
 
-#: mactelnet.c:575
+#: mactelnet.c:801
 #, c-format
 msgid "done\n"
 msgstr ""
 
-#: mactelnetd.c:249
+#: mactelnetd.c:262
 #, c-format
 msgid "Listening on %s for %s\n"
 msgstr ""
 
-#: mactelnetd.c:409
+#: mactelnetd.c:422
 #, c-format
 msgid "(%d) Invalid login by %s."
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:412
+#: mactelnetd.c:425
 msgid "Login failed, incorrect username or password\r\n"
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:429
+#: mactelnetd.c:442
 msgid "Terminal error\r\n"
 msgstr ""
 
-#: mactelnetd.c:440
+#: mactelnetd.c:453
 #, c-format
 msgid "(%d) Login ok, but local user not accessible (%s)."
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:442
+#: mactelnetd.c:455
 msgid "Local user not accessible\r\n"
 msgstr ""
 
-#: mactelnetd.c:451
+#: mactelnetd.c:464
 #, c-format
 msgid "Error opening %s: %s"
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:453
+#: mactelnetd.c:466
 msgid "Error opening terminal\r\n"
 msgstr ""
 
-#: mactelnetd.c:464
+#: mactelnetd.c:477
 #, c-format
 msgid "(%d) User %s logged in."
 msgstr ""
 
-#: mactelnetd.c:502
+#: mactelnetd.c:515
 #, c-format
 msgid "(%d) Could not log in %s (%d:%d): setuid/setgid: %s"
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:504
+#: mactelnetd.c:517
 msgid "Internal error\r\n"
 msgstr ""
 
-#: mactelnetd.c:510
+#: mactelnetd.c:523
 #, c-format
 msgid "(%d) User %s disconnected with "
 msgstr ""
 
-#: mactelnetd.c:603
+#: mactelnetd.c:563 mactelnetd.c:569
+msgid "Socket error.\r\n"
+msgstr ""
+
+#: mactelnetd.c:581
+msgid "Error in connection of tunnel to server.\r\n"
+msgstr ""
+
+#: mactelnetd.c:660
+msgid ""
+"The server does not support standard MAC-Telnet Protocol. Please try using "
+"MAC-SSH instead.\r\n"
+msgstr ""
+
+#: mactelnetd.c:671
+msgid "Server port disconnection.\r\n"
+msgstr ""
+
+#: mactelnetd.c:676
 #, c-format
 msgid "(%d) Unhandeled control packet type: %d"
 msgstr ""
 
-#: mactelnetd.c:649
+#: mactelnetd.c:726
 #, c-format
 msgid "(%d) New connection from %s."
 msgstr ""
 
-#: mactelnetd.c:677 mactelnetd.c:1111
+#: mactelnetd.c:754 mactelnetd.c:1246
 #, c-format
 msgid "(%d) Connection closed."
 msgstr ""
 
-#: mactelnetd.c:723
+#: mactelnetd.c:800
 #, c-format
 msgid "(%d) Unhandeled packet type: %d"
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:816
+#: mactelnetd.c:898
 msgid ""
 "\r\n"
 "\r\n"
 "Daemon shutting down.\r\n"
 msgstr ""
 
-#: mactelnetd.c:818
+#: mactelnetd.c:900
 msgid "Daemon shutting down"
 msgstr ""
 
-#: mactelnetd.c:849
+#: mactelnetd.c:931
 msgid "SIGHUP: Reloading interfaces"
 msgstr ""
 
-#: mactelnetd.c:860
+#: mactelnetd.c:942
 msgid "No devices found! Exiting.\n"
 msgstr ""
 
-#: mactelnetd.c:874
+#: mactelnetd.c:956
 #, c-format
 msgid "(%d) Connection closed because interface %s is gone."
 msgstr ""
 
-#: mactelnetd.c:927
+#: mactelnetd.c:1029
 #, c-format
-msgid "Usage: %s [-f|-n|-h]\n"
+msgid "Usage: %s [-v] [-h] [-n] [-f] [-S] [-P <port>] [-U <user>]\n"
 msgstr ""
 
-#: mactelnetd.c:930
+#: mactelnetd.c:1030
 #, c-format
 msgid ""
 "\n"
 "Parameters:\n"
-"  -f        Run process in foreground.\n"
-"  -n        Do not use broadcast packets. Just a tad less insecure.\n"
-"  -h        This help.\n"
+"  -f         Run process in foreground.\n"
+"  -n         Do not use broadcast packets. Just a tad less insecure.\n"
+"  -S / -F    Tunneling of TCP connections through  MAC-Telnet protocol,\n"
+"             instead of standard MAC-Telnet use.\n"
+"  -P <port>  Local TCP port for SSH Server.\n"
+"             (If not specified, port 22 by default.)\n"
+"  -U <user>  Drop privileges by switching to user, when the command is\n"
+"             run as a privileged user in conjunction with -n option.\n"
+"             Standard MAC-Telnet is not compatible with this option.\n"
+"  -v         Print version and exit.\n"
+"  -h         Print help and exit.\n"
 "\n"
 msgstr ""
 
-#: mactelnetd.c:1003
+#: mactelnetd.c:1069
+#, c-format
+msgid ""
+"Drop privileges (-U) option ignored. Standard MAC-Telnet is not compatible "
+"with this option.\n"
+msgstr ""
+
+#: mactelnetd.c:1122
 #, c-format
 msgid "MNDP: Error binding to %s:%d, %s\n"
 msgstr ""
 
-#: mactelnetd.c:1007
+#: mactelnetd.c:1126
 #, c-format
 msgid "Bound to %s:%d"
 msgstr ""
 
-#: mactelnetd.c:1033
+#: mactelnetd.c:1153
 msgid "Unable to find any valid network interfaces\n"
 msgstr ""
 
-#: mactelnetd.c:1109
+#: mactelnetd.c:1241
+#, c-format
+msgid "(%d) Connection to server closed."
+msgstr ""
+
+#: mactelnetd.c:1244
 #, c-format
 msgid "(%d) Connection to user %s closed."
 msgstr ""
 
-#: mactelnetd.c:1119
+#: mactelnetd.c:1254
 #, c-format
 msgid "(%d) Waiting for ack\n"
 msgstr ""
 
-#: mactelnetd.c:1135
+#: mactelnetd.c:1270
 #, c-format
 msgid "(%d) Session timed out"
 msgstr ""
 
 #. _ Please include both \r and \n in translation, this is needed for the terminal emulator.
-#: mactelnetd.c:1138
+#: mactelnetd.c:1273
 msgid "Timeout\r\n"
 msgstr ""
 
@@ -358,9 +450,9 @@ msgstr ""
 msgid "An error occured. aborting\n"
 msgstr ""
 
-#: mndp.c:112
+#: mndp.c:115
 #, c-format
-msgid " up %d days %d hours"
+msgid "  up %d days %d hours"
 msgstr ""
 
 #: protocol.c:84 protocol.c:148
@@ -391,4 +483,11 @@ msgstr ""
 #: protocol.c:538
 #, c-format
 msgid "found\n"
+msgstr ""
+
+#: users.c:86
+#, c-format
+msgid ""
+"Failed dropping privileges. The user %s is not a valid username on local "
+"system."
 msgstr ""
