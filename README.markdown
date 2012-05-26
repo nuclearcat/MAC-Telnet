@@ -39,8 +39,10 @@ _MAC-Telnet_:
   mechanisms supported by ssh are used.
 * Public key authentication works seamlessly permiting logins without password.
 * The communication between client and server is encrypyted by _SSH_.
-* As long as the option _-n_ is not used, the daemon does not require root privileges and can be run by a non-privileged 
-  user for additional security.
+* The daemon does not require root privileges and can be run by a non-privileged 
+  user for additional security. In case the _-n_ option is used the daemon, the
+  command must be run as _root_ user, but the_-U_ option can be used to drop
+  privileges once the initial setup phase ends.
 * The daemon relies on the security model of _SSH_, instead of creating a shell
   environment itself.
 
