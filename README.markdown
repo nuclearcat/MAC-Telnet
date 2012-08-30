@@ -70,8 +70,8 @@ for the official documentation of the project.
 
 The documentation for the forked version with the experimental features is 
 published at [MAC-Telnet Project Web Page](http://aouyar.github.com/MAC-Telnet/)
-by [Ali Onur Uyar]({{ page.baseptr}}/) 
-([{{ site.user }} @ GitHub] (https://github.com/{{ site.user }})).
+by [Ali Onur Uyar](http://aouyar.github.com) 
+([aouyar @ GitHub] (https://github.com/aouyar)).
 
 
 Licensing
