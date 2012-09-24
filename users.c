@@ -83,7 +83,7 @@ struct mt_credentials* find_user(char *username) {
 void drop_privileges(char *username) {
 	struct passwd *user = (struct passwd *) getpwnam(username);
 	if (user == NULL) {
-		fprintf(stderr, _("Failed dropping privileges. The user %s is not a valid username on local system."), username);
+		fprintf(stderr, _("Failed dropping privileges. The user %s is not a valid username on local system.\n"), username);
 		exit(1);
 	}
 	if (getuid() == 0) {
@@ -96,10 +96,14 @@ void drop_privileges(char *username) {
 			perror("setuid: Error dropping user privileges");
 		    exit(1);
 		}
-		/* Verify if the privileges were developed. */
+		/* Verify if the privileges were dropped. */
 		if (setuid(0) != -1) {
 			perror("Failed to drop privileges");
 			exit(1);
 		}
+	}
+	else {
+		fprintf(stderr, _("Failed dropping privileges. Not running as privileged user.\n"));
+		exit(1);
 	}
 }
