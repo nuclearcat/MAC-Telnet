@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <pwd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -292,7 +293,7 @@ static int handle_packet(unsigned char *data, int data_len) {
 			   the data is raw terminal data to be outputted to the terminal. */
 			else if (!tunnel_conn && cpkt.cptype == MT_CPTYPE_PLAINDATA) {
 				cpkt.data[cpkt.length] = 0;
-				printf("%s", cpkt.data);
+				fputs((const char *)cpkt.data, stdout);
 			}
 			/* If the (remaining) data did not have a control-packet magic byte sequence,
 			   the data is raw terminal data to be tunneled to local SSH Client. */

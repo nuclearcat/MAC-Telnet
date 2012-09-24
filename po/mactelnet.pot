@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mactelnet\n"
 "Report-Msgid-Bugs-To: haakon.nessjoen@gmail.com\n"
-"POT-Creation-Date: 2012-05-26 00:55-0600\n"
+"POT-Creation-Date: 2012-09-24 17:08+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -92,55 +92,55 @@ msgstr ""
 msgid "%s Reply of %d bytes of unequal data\n"
 msgstr ""
 
-#: mactelnet.c:176
+#: mactelnet.c:177
 #, c-format
 msgid ""
 "\n"
 "Connection timed out\n"
 msgstr ""
 
-#: mactelnet.c:287
+#: mactelnet.c:288
 #, c-format
 msgid ""
 "Server %s does not seem to use MAC-SSH Protocol. Please Try using MAC-Telnet "
 "instead.\n"
 msgstr ""
 
-#: mactelnet.c:301
+#: mactelnet.c:302
 #, c-format
 msgid "Terminal client disconnected.\n"
 msgstr ""
 
-#: mactelnet.c:312
+#: mactelnet.c:313
 #, c-format
 msgid ""
 "Server %s does not seem to use MAC-Telnet Protocol. Please Try using MAC-SSH "
 "instead.\n"
 msgstr ""
 
-#: mactelnet.c:350
+#: mactelnet.c:351
 #, c-format
 msgid "Connection closed.\n"
 msgstr ""
 
-#: mactelnet.c:356
+#: mactelnet.c:357
 #, c-format
 msgid "Unhandeled packet type: %d received from server %s\n"
 msgstr ""
 
-#: mactelnet.c:378
+#: mactelnet.c:379
 #, c-format
 msgid "Error: No suitable devices found\n"
 msgstr ""
 
-#: mactelnet.c:551
+#: mactelnet.c:552
 #, c-format
 msgid ""
 "Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-S] [-P <port>]\n"
 "       [-t <timeout>] [-u <user>] [-p <pass>] [-c <path>] [-U <user>]\n"
 msgstr ""
 
-#: mactelnet.c:555
+#: mactelnet.c:556
 #, c-format
 msgid ""
 "\n"
@@ -157,7 +157,7 @@ msgid ""
 "  -u <user>     Specify username on command line.\n"
 "  -p <pass>     Specify password on command line.\n"
 "  -U <user>     Drop privileges by switching to user, when the command is\n"
-"                run as a privileged user in conjunction with -n option.\n"
+"                run as a privileged user in conjunction with the -n option.\n"
 "  -S            Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
 "                Forward SSH connection through MAC-Telnet and launch SSH "
 "client.\n"
@@ -175,56 +175,56 @@ msgid ""
 "\n"
 msgstr ""
 
-#: mactelnet.c:626
+#: mactelnet.c:627
 #, c-format
 msgid "You need to have root privileges to use the -n parameter.\n"
 msgstr ""
 
-#: mactelnet.c:662
+#: mactelnet.c:663
 #, c-format
 msgid "Login: "
 msgstr ""
 
-#: mactelnet.c:669
+#: mactelnet.c:670
 msgid "Password: "
 msgstr ""
 
-#: mactelnet.c:702 mactelnet.c:792 mactelnetd.c:257 mactelnetd.c:1100
+#: mactelnet.c:703 mactelnet.c:793 mactelnetd.c:257 mactelnetd.c:1100
 #, c-format
 msgid "Error binding to %s:%d, %s\n"
 msgstr ""
 
-#: mactelnet.c:706
+#: mactelnet.c:707
 #, c-format
 msgid "Failed listen on server socket %s:%d, %s\n"
 msgstr ""
 
-#: mactelnet.c:727
+#: mactelnet.c:728
 #, c-format
 msgid "Waiting for tunnel connection on port: %d\n"
 msgstr ""
 
-#: mactelnet.c:738
+#: mactelnet.c:739
 #, c-format
 msgid "Client connected to tunnel from port: %d\n"
 msgstr ""
 
-#: mactelnet.c:759
+#: mactelnet.c:760
 #, c-format
 msgid "Execution of terminal client failed.\n"
 msgstr ""
 
-#: mactelnet.c:782
+#: mactelnet.c:783
 #, c-format
 msgid "Connecting to %s..."
 msgstr ""
 
-#: mactelnet.c:797
+#: mactelnet.c:798
 #, c-format
 msgid "Connection failed.\n"
 msgstr ""
 
-#: mactelnet.c:801
+#: mactelnet.c:802
 #, c-format
 msgid "done\n"
 msgstr ""
@@ -364,12 +364,12 @@ msgid ""
 "Parameters:\n"
 "  -f         Run process in foreground.\n"
 "  -n         Do not use broadcast packets. Just a tad less insecure.\n"
-"  -S / -F    Tunneling of TCP connections through  MAC-Telnet protocol,\n"
-"             instead of standard MAC-Telnet use.\n"
-"  -P <port>  Local TCP port for SSH Server.\n"
+"  -S / -F    Forwarding of TCP connections through  MAC-Telnet protocol,\n"
+"             instead of using the standard MAC-Telnet remote terminal.\n"
+"  -P <port>  Local TCP port used for forwarding connections to SSH Server.\n"
 "             (If not specified, port 22 by default.)\n"
 "  -U <user>  Drop privileges by switching to user, when the command is\n"
-"             run as a privileged user in conjunction with -n option.\n"
+"             run as a privileged user in conjunction with the -n option.\n"
 "             Standard MAC-Telnet is not compatible with this option.\n"
 "  -v         Print version and exit.\n"
 "  -h         Print help and exit.\n"
@@ -489,5 +489,10 @@ msgstr ""
 #, c-format
 msgid ""
 "Failed dropping privileges. The user %s is not a valid username on local "
-"system."
+"system.\n"
+msgstr ""
+
+#: users.c:106
+#, c-format
+msgid "Failed dropping privileges. Not running as privileged user.\n"
 msgstr ""
