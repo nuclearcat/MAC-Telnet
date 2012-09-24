@@ -456,8 +456,8 @@ int main (int argc, char **argv) {
 	textdomain("mactelnet");
 
 	/* Set default for ssh_path. */
-	strncpy(ssh_path, SSH_PATH, sizeof(ssh_path) -1);
-	ssh_path[sizeof(ssh_path)] = '\0';
+	strncpy(ssh_path, SSH_PATH, sizeof(ssh_path) - 1);
+	ssh_path[sizeof(ssh_path) - 1] = '\0';
 
     /* Ignore args after -- for MAC-Telnet client. */
 	int mactelnet_argc = argc;
@@ -518,8 +518,8 @@ int main (int argc, char **argv) {
 
 			case 'c':
 				/* Save ssh executable path */
-				strncpy(ssh_path, optarg, sizeof(ssh_path) -1);
-				ssh_path[sizeof(ssh_path)] = '\0';
+				strncpy(ssh_path, optarg, sizeof(ssh_path) - 1);
+				ssh_path[sizeof(ssh_path) - 1] = '\0';
 				break;
 
 			case 't':
