@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <pwd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
