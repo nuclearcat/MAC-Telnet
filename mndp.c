@@ -114,6 +114,9 @@ int mndp(void)  {
 			if (packet->uptime > 0) {
 				printf(_("  up %d days %d hours"), packet->uptime / 86400, packet->uptime % 86400 / 3600);
 			}
+			if (packet->softid != NULL) {
+				printf("  %s", packet->softid);
+			}
 			putchar('\n');
 		}
 	}
