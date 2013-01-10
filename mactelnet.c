@@ -527,7 +527,7 @@ int main (int argc, char **argv) {
 				break;
 
 			case 'l':
-				return mndp();
+				return mndp(connect_timeout);
 				break;
 
 			case 'v':
