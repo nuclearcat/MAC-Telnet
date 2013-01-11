@@ -79,6 +79,8 @@ static int sourceport;
 static int fwdport = MT_TUNNEL_CLIENT_PORT;
 
 static int connect_timeout = CONNECT_TIMEOUT;
+static char run_mndp = 0;
+static int mndp_timeout = 0;
 
 static int is_a_tty = 1;
 static int quiet_mode = 0;
@@ -524,10 +526,11 @@ int main (int argc, char **argv) {
 
 			case 't':
 				connect_timeout = atoi(optarg);
+				mndp_timeout = connect_timeout;
 				break;
 
 			case 'l':
-				return mndp(connect_timeout);
+				run_mndp = 1;
 				break;
 
 			case 'v':
@@ -545,6 +548,9 @@ int main (int argc, char **argv) {
 				break;
 
 		}
+	}
+	if (run_mndp) {
+		return mndp(mndp_timeout);
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
