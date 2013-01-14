@@ -563,7 +563,7 @@ int main (int argc, char **argv) {
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
-			"  MAC            MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
+			"  MAC            MAC-Address of the RouterOS/mactelnetd device. Use MNDP to \n"
 			"                 discover it.\n"
 			"  identity       The identity/name of your destination device. Uses MNDP \n"
 			"                 protocol to find it.\n"
