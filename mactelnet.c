@@ -563,10 +563,10 @@ int main (int argc, char **argv) {
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
-			"  MAC           MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
-            "                discover it.\n"
-			"  identity      The identity/name of your destination device. Uses MNDP \n"
-			"                protocol to find it.\n"
+			"  MAC            MAC-Address of the RouterOS/mactelnetd device. Use mndp to \n"
+			"                 discover it.\n"
+			"  identity       The identity/name of your destination device. Uses MNDP \n"
+			"                 protocol to find it.\n"
 			"  -l             List/Search for routers nearby (MNDP). You may use -t to set timeout.\n"
 			"  -B             Batch mode. Use computer readable output (CSV), for use with -l.\n"
 			"  -n             Do not use broadcast packets. Less insecure but requires\n"
