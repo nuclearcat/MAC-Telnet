@@ -885,7 +885,7 @@ void mndp_broadcast() {
 		} else {
 			mndp_add_attribute(&pdata, MT_MNDPTYPE_SOFTID, MT_SOFTID_MACSSH, strlen(MT_SOFTID_MACSSH));
 		}
-
+		mndp_add_attribute(&pdata, MT_MNDPTYPE_IFNAME, interface->name, strlen(interface->name));
 		header->cksum = in_cksum((unsigned short *)&(pdata.data), pdata.size);
 		send_special_udp(interface, MT_MNDP_PORT, &pdata);
 	}

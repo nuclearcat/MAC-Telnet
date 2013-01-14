@@ -84,6 +84,7 @@ static int mndp_timeout = 0;
 
 static int is_a_tty = 1;
 static int quiet_mode = 0;
+static int batch_mode = 0;
 
 static int keepalive_counter = 0;
 
@@ -472,7 +473,7 @@ int main (int argc, char **argv) {
 	}
 
 	while (1) {
-		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:U:");
+		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:U:B");
 
 		if (c == -1) {
 			break;
@@ -542,6 +543,9 @@ int main (int argc, char **argv) {
 				quiet_mode = 1;
 				break;
 
+			case 'B':
+				batch_mode = 1;
+
 			case 'h':
 			case '?':
 				print_help = 1;
@@ -550,7 +554,7 @@ int main (int argc, char **argv) {
 		}
 	}
 	if (run_mndp) {
-		return mndp(mndp_timeout);
+		return mndp(mndp_timeout, batch_mode);
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
@@ -563,24 +567,25 @@ int main (int argc, char **argv) {
             "                discover it.\n"
 			"  identity      The identity/name of your destination device. Uses MNDP \n"
 			"                protocol to find it.\n"
-			"  -l            List/Search for routers nearby. (using MNDP)\n"
-			"  -n            Do not use broadcast packets. Less insecure but requires root \n"
-		    "                privileges.\n"
-			"  -t <timeout>  Amount of seconds to wait for a response on each interface.\n"
-			"  -u <user>     Specify username on command line.\n"
-			"  -p <pass>     Specify password on command line.\n"
-			"  -U <user>     Drop privileges by switching to user, when the command is\n"
-			"                run as a privileged user in conjunction with the -n option.\n"
-			"  -S            Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
-		    "                Forward SSH connection through MAC-Telnet and launch SSH client.\n"
-			"  -F            Forward connection through of MAC-Telnet without launching the \n"
-		    "                SSH Client.\n"
-			"  -P <port>     Local TCP port for forwarding SSH connection.\n"
-			"                (If not specified, port 2222 by default.)\n"
-			"  -c <path>     Path for ssh client executable. (Default: /usr/bin/ssh)\n"
-			"  -q            Quiet mode.\n"
-			"  -v            Print version and exit.\n"
-			"  -h            Print help and exit.\n"
+			"  -l             List/Search for routers nearby (MNDP). You may use -t to set timeout.\n"
+			"  -B             Batch mode. Use computer readable output (CSV), for use with -l.\n"
+			"  -n             Do not use broadcast packets. Less insecure but requires\n"
+			"                 root privileges.\n"
+			"  -t <timeout>   Amount of seconds to wait for a response on each interface.\n"
+			"  -u <user>      Specify username on command line.\n"
+			"  -p <password>  Specify password on command line.\n"
+			"  -U <user>      Drop privileges to this user. Used in conjunction with -n\n"
+			"                 for security.\n"
+			"  -S             Use MAC-SSH instead of MAC-Telnet. (Implies -F)\n"
+			"                 Forward SSH connection through MAC-Telnet and launch SSH client.\n"
+			"  -F             Forward connection through of MAC-Telnet without launching the \n"
+			"                 SSH Client.\n"
+			"  -P <port>      Local TCP port for forwarding SSH connection.\n"
+			"                 (If not specified, port 2222 by default.)\n"
+			"  -c <path>      Path for ssh client executable. (Default: /usr/bin/ssh)\n"
+			"  -q             Quiet mode.\n"
+			"  -v             Print version and exit.\n"
+			"  -h             This help.\n"
 			"\n"
 			"All arguments after '--' will be passed to the ssh client command.\n"
 			"\n"));
