@@ -94,7 +94,7 @@ static char password[255];
 static char nonpriv_username[255];
 static int sent_auth = 0;
 
-struct net_interface interfaces[MAX_INTERFACES];
+struct net_interface *interfaces;
 struct net_interface *active_interface;
 
 /* Protocol data direction */
@@ -373,7 +373,9 @@ static int find_interface(char *ifname) {
 	int optval = 1;
 
 	/* TODO: reread interfaces on HUP */
-	bzero(&interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
+	interfaces = malloc(sizeof(struct net_interface) * MAX_INTERFACES);
+	bzero(interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
+
 
 	bzero(emptymac, ETH_ALEN);
 

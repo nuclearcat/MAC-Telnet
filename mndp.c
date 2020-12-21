@@ -68,7 +68,7 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	// Add special case *, dont bind to it, it is to send discovery packet to all interfaces
-	if (iface != NULL && iface[0] != '*') {
+	if (iface != NULL && iface[0] != '%') {
 		size_t len = strlen(iface);
 		int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, iface, len);
 		if (r) {
@@ -111,8 +111,9 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 		}
 		// This means send discovery request to all available interfaces
 		if (iface != NULL && iface[0] == '*') {
-			struct net_interface interfaces[MAX_INTERFACES];
-			bzero(&interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
+			struct net_interface *interfaces;
+			interfaces = malloc(sizeof(struct net_interface) * MAX_INTERFACES);
+			bzero(interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
 			if (net_get_interfaces(interfaces, MAX_INTERFACES) <= 0) {
 				fprintf(stderr, _("Error: No suitable devices found\n"));
 				//exit(1);
@@ -126,15 +127,19 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 					continue;
 
 				size_t len = strlen(interfaces[i].name);
-				int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interfaces[i].name, len);
-				if (r) {
-					fprintf(stderr, _("Error binding to interface %s\n"), interfaces[i].name);
-					perror("");
-					//return 1;
+				if (len > 0) {
+					int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interfaces[i].name, len);
+					if (r) {
+						fprintf(stderr, _("Error binding to interface %s\n"), interfaces[i].name);
+						perror("");
+						//return 1;
+					}
+
 				}
 			}
 			// Remove binding
 			setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, "", 0);
+			free(interfaces);
 		}
 	}
 	if (batch_mode) {
