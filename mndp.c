@@ -38,6 +38,7 @@ unsigned char mt_direction_fromserver = 0;
 
 int main(int argc, char **argv)  {
 	int batch_mode = 0;
+	char *iface = NULL;
 #else
 
 void sig_alarm(int signo)
@@ -45,7 +46,7 @@ void sig_alarm(int signo)
 	exit(0);
 }
 
-int mndp(int timeout, int batch_mode)  {
+int mndp(int timeout, int batch_mode, char *iface)  {
 #endif
 	int sock,result;
 	int optval = 1;
@@ -59,11 +60,21 @@ int mndp(int timeout, int batch_mode)  {
 #endif
 
 	setlocale(LC_ALL, "");
-	bindtextdomain("mactelnet","/usr/share/locale");
+	bindtextdomain("mactelnet", "/usr/share/locale");
 	textdomain("mactelnet");
 
 	/* Open a UDP socket handle */
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+	if (iface != NULL) {
+		size_t len = strlen(iface);
+		int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, iface, len);
+		if (r) {
+			fprintf(stderr, _("Error binding to interface %s\n"), iface);
+			perror("");
+			return 1;			
+		}
+	}
 
 	/* Set initialize address/port */
 	memset((char *) &si_me, 0, sizeof(si_me));

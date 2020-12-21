@@ -363,7 +363,7 @@ static int handle_packet(unsigned char *data, int data_len) {
 	return pkthdr.ptype;
 }
 
-static int find_interface() {
+static int find_interface(char *ifname) {
 	fd_set read_fds;
 	struct mt_packet data;
 	struct sockaddr_in myip;
@@ -389,6 +389,10 @@ static int find_interface() {
 
 		/* Skip loopback interfaces */
 		if (memcmp("lo", interfaces[i].name, 2) == 0) {
+			continue;
+		}
+		/* Restrict search for specific interface name only */
+		if (ifname != NULL && strcmp(ifname, interfaces[i].name) != 0) {
 			continue;
 		}
 
@@ -453,6 +457,7 @@ int main (int argc, char **argv) {
 	unsigned char drop_priv = 0;
 	int c;
 	int optval = 1;
+	char *only_interface = NULL;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain("mactelnet","/usr/share/locale");
@@ -473,7 +478,7 @@ int main (int argc, char **argv) {
 	}
 
 	while (1) {
-		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:U:B");
+		c = getopt(mactelnet_argc, argv, "nqlt:u:p:vh?SFP:c:U:BI:");
 
 		if (c == -1) {
 			break;
@@ -546,6 +551,10 @@ int main (int argc, char **argv) {
 			case 'B':
 				batch_mode = 1;
 
+			case 'I':
+				only_interface = strdup(optarg);
+				break;
+
 			case 'h':
 			case '?':
 				print_help = 1;
@@ -554,12 +563,12 @@ int main (int argc, char **argv) {
 		}
 	}
 	if (run_mndp) {
-		return mndp(mndp_timeout, batch_mode);
+		return mndp(mndp_timeout, batch_mode, only_interface);
 	}
 	if (argc - optind < 1 || print_help) {
 		print_version();
 		fprintf(stderr, _("Usage: %s <MAC|identity> [-v] [-h] [-q] [-n] [-l] [-B] [-S] [-P <port>] "
-		                  "[-t <timeout>] [-u <user>] [-p <pass>] [-c <path>] [-U <user>]\n"), argv[0]);
+		                  "[-t <timeout>] [-u <user>] [-p <pass>] [-c <path>] [-U <user>] [-I <interface>]\n"), argv[0]);
 
 		if (print_help) {
 			fprintf(stderr, _("\nParameters:\n"
@@ -583,6 +592,7 @@ int main (int argc, char **argv) {
 			"  -P <port>      Local TCP port for forwarding SSH connection.\n"
 			"                 (If not specified, port 2222 by default.)\n"
 			"  -c <path>      Path for ssh client executable. (Default: /usr/bin/ssh)\n"
+			"  -I <interface> Restrict search to interface\n"			
 			"  -q             Quiet mode.\n"
 			"  -v             Print version and exit.\n"
 			"  -h             This help.\n"
@@ -804,7 +814,7 @@ int main (int argc, char **argv) {
 		return 1;
 	}
 
-	if (!find_interface() || (result = recvfrom(insockfd, buff, 1400, 0, 0, 0)) < 1) {
+	if (!find_interface(only_interface) || (result = recvfrom(insockfd, buff, 1400, 0, 0, 0)) < 1) {
 		fprintf(stderr, _("Connection failed.\n"));
 		return 1;
 	}
