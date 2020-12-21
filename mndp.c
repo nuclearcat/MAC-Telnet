@@ -122,8 +122,10 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 
 	while(1) {
 		struct mt_mndp_info *packet;
+		struct sockaddr_in srcaddr;
+		socklen_t srcaddr_sz = sizeof(srcaddr);
 		/* Wait for a UDP packet */
-		result = recvfrom(sock, buff, MT_PACKET_LEN, 0, 0, 0);
+		result = recvfrom(sock, buff, MT_PACKET_LEN, 0, (struct sockaddr *) &srcaddr, (socklen_t*)&srcaddr_sz);
 		if (result < 0) {
 			fprintf(stderr, _("An error occured. aborting\n"));
 			exit(1);
@@ -134,6 +136,8 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 
 		if (packet != NULL && !batch_mode) {
 			/* Print it */
+			if (srcaddr_sz > 0)
+				printf("(%s) ", inet_ntoa(srcaddr.sin_addr));
 			printf("%-17s %s", ether_ntoa((struct ether_addr *)packet->address), packet->identity);
 			if (packet->platform != NULL) {
 				printf(" (%s %s %s)", packet->platform, packet->version, packet->hardware);
