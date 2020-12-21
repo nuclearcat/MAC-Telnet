@@ -19,7 +19,8 @@
 #ifndef _INTERFACES_H
 #define _INTERFACES_H 1
 
-#define MAX_INTERFACES 32
+/* On BRAS interfaces easily can reach 16K and more */
+#define MAX_INTERFACES 32768
 
 struct net_interface {
 	char name[256];

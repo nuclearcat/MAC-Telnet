@@ -27,6 +27,7 @@
 #include <string.h>
 #include "protocol.h"
 #include "config.h"
+#include "interfaces.h"
 
 #define _(String) gettext (String)
 
@@ -48,7 +49,7 @@ void sig_alarm(int signo)
 
 int mndp(int timeout, int batch_mode, char *iface)  {
 #endif
-	int sock,result;
+	int sock, result;
 	int optval = 1;
 	struct sockaddr_in si_me, si_remote;
 	unsigned char buff[MT_PACKET_LEN];
@@ -66,13 +67,14 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 	/* Open a UDP socket handle */
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	if (iface != NULL) {
+	// Add special case *, dont bind to it, it is to send discovery packet to all interfaces
+	if (iface != NULL && iface[0] != '*') {
 		size_t len = strlen(iface);
 		int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, iface, len);
 		if (r) {
 			fprintf(stderr, _("Error binding to interface %s\n"), iface);
 			perror("");
-			return 1;			
+			//return 1;
 		}
 	}
 
@@ -85,7 +87,7 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval));
 
 	/* Bind to specified address/port */
-	if (bind(sock, (struct sockaddr *)&si_me, sizeof(si_me))==-1) {
+	if (bind(sock, (struct sockaddr *)&si_me, sizeof(si_me)) == -1) {
 		fprintf(stderr, _("Error binding to %s:%d\n"), inet_ntoa(si_me.sin_addr), MT_MNDP_PORT);
 		return 1;
 	}
@@ -94,7 +96,7 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 	fprintf(stderr, _("Searching for MikroTik routers... Abort with CTRL+C.\n"));
 
 	/* Set the socket to allow sending broadcast packets */
-	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, sizeof (optval))==-1) {
+	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, sizeof (optval)) == -1) {
 		fprintf(stderr, _("Unable to send broadcast packets: Operating in receive only mode.\n"));
 	} else {
 		/* Request routers identify themselves */
@@ -104,11 +106,37 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 		si_remote.sin_family = AF_INET;
 		si_remote.sin_port = htons(MT_MNDP_PORT);
 		si_remote.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-		if (sendto (sock, &message, sizeof (message), 0, (struct sockaddr *)&si_remote, sizeof(si_remote))==-1) {
+		if (sendto (sock, &message, sizeof (message), 0, (struct sockaddr *)&si_remote, sizeof(si_remote)) == -1) {
 			fprintf(stderr, _("Unable to send broadcast packet: Operating in receive only mode.\n"));
 		}
-	}
+		// This means send discovery request to all available interfaces
+		if (iface != NULL && iface[0] == '*') {
+			struct net_interface interfaces[MAX_INTERFACES];
+			bzero(&interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
+			if (net_get_interfaces(interfaces, MAX_INTERFACES) <= 0) {
+				fprintf(stderr, _("Error: No suitable devices found\n"));
+				//exit(1);
+			}
+			for (int i = 0; i < MAX_INTERFACES; ++i) {
+				if (!interfaces[i].in_use)
+					break;
 
+				/* Skip loopback interfaces */
+				if (memcmp("lo", interfaces[i].name, 2) == 0)
+					continue;
+
+				size_t len = strlen(interfaces[i].name);
+				int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interfaces[i].name, len);
+				if (r) {
+					fprintf(stderr, _("Error binding to interface %s\n"), interfaces[i].name);
+					perror("");
+					//return 1;
+				}
+			}
+			// Remove binding
+			setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, "", 0);
+		}
+	}
 	if (batch_mode) {
 		printf("%s\n", _("MAC-Address,Identity,Platform,Version,Hardware,Uptime,Softid,Ifname"));
 	} else {
@@ -120,7 +148,7 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 	}
 #endif
 
-	while(1) {
+	while (1) {
 		struct mt_mndp_info *packet;
 		struct sockaddr_in srcaddr;
 		socklen_t srcaddr_sz = sizeof(srcaddr);
@@ -142,7 +170,7 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 			if (packet->platform != NULL) {
 				printf(" (%s %s %s)", packet->platform, packet->version, packet->hardware);
 			}
-			if (packet->softid !=NULL) {
+			if (packet->softid != NULL) {
 				printf("  %s", packet->softid);
 			}
 			if (packet->uptime > 0) {
