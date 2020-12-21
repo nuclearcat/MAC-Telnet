@@ -110,8 +110,13 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 			fprintf(stderr, _("Unable to send broadcast packet: Operating in receive only mode.\n"));
 		}
 		// This means send discovery request to all available interfaces
-		if (iface != NULL && iface[0] == '*') {
+		if (iface != NULL && iface[0] == '%') {
 			struct net_interface *interfaces;
+			/* We really need larger buffer */
+			int n = 1024 * 1024;
+			if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &n, sizeof(n)) == -1) {
+				// deal with failure, or ignore if you can live with the default size
+			}
 			interfaces = malloc(sizeof(struct net_interface) * MAX_INTERFACES);
 			bzero(interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
 			if (net_get_interfaces(interfaces, MAX_INTERFACES) <= 0) {
@@ -125,7 +130,7 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 				/* Skip loopback interfaces */
 				if (memcmp("lo", interfaces[i].name, 2) == 0)
 					continue;
-
+				printf("Sending to %s\n", interfaces[i].name);
 				size_t len = strlen(interfaces[i].name);
 				if (len > 0) {
 					int r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interfaces[i].name, len);
@@ -134,7 +139,9 @@ int mndp(int timeout, int batch_mode, char *iface)  {
 						perror("");
 						//return 1;
 					}
-
+				}
+				if (sendto (sock, &message, sizeof (message), 0, (struct sockaddr *)&si_remote, sizeof(si_remote)) == -1) {
+					fprintf(stderr, _("Unable to send broadcast packet: Operating in receive only mode.\n"));
 				}
 			}
 			// Remove binding
